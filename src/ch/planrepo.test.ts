@@ -27,7 +27,7 @@ describe("PlanRepo", function () {
     it.skip("should have valid RaceType values", function () {
       for (const p of repo.available) {
         expect(
-          p[2] === "Marathon" || p[2] === "Half Marathon" || p[2] === "5K",
+          p.type === "Marathon" || p.type === "Half Marathon" || p.type === "5K",
         ).toBe(true);
       }
     });

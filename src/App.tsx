@@ -66,7 +66,7 @@ const App = () => {
   ) => {
     return {
       u: units,
-      p: plan[0],
+      p: plan.id,
       d: date,
       s: weekStartsOn,
     };
