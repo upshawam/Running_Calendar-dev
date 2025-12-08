@@ -4,7 +4,7 @@ import { plans } from "./planList";
 import { PlanSummary, TrainingPlan } from "types/app";
 
 function url(summary: PlanSummary) {
-  return Config.plansPath + summary[0] + ".json";
+  return Config.plansPath + summary.id + ".json";
 }
 
 // A repository of training plans. Fetches plans on demand and caches them in memory.
@@ -18,7 +18,7 @@ class PlanRepo {
 
     var initialMap: { [id: string]: PlanSummary } = {};
     this._byId = plans.reduce(function (m, p) {
-      m[p[0]] = p;
+      m[p.id] = p;
       return m;
     }, initialMap);
   }

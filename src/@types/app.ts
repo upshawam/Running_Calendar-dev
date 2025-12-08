@@ -1,4 +1,10 @@
-export type PlanSummary = [string, string, RaceType];
+export interface PlanSummary {
+  id: string;
+  name: string;
+  type: RaceType;
+  coach: string;
+  subcategory?: string;
+}
 
 export type Units = "mi" | "km";
 
