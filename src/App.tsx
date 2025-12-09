@@ -165,6 +165,7 @@ const App = () => {
         selectedUnits={selectedUnits}
         unitsChangeHandler={onSelectedUnitsChanged}
       />
+      <PlanDetailsCard racePlan={racePlan} />
       <div className="second-toolbar">
         <button className="app-button" onClick={downloadIcalHandler}>Download iCal</button>
         <button className="app-button" onClick={downloadCsvHandler}>Download CSV</button>
@@ -173,7 +174,6 @@ const App = () => {
           undoHandler={undoHandler}
         />
       </div>
-      <PlanDetailsCard racePlan={racePlan} />
       <div className="main-ui">
         {racePlan && (
           <CalendarGrid
