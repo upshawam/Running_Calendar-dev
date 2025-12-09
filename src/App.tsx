@@ -7,7 +7,6 @@ import { CalendarGrid } from "./components/CalendarGrid";
 import { toIcal } from "./ch/icalservice";
 import { toCsv } from "./ch/csvService";
 import { download } from "./ch/downloadservice";
-import UnitsButtons from "./components/UnitsButtons";
 import PlanAndDate from "./components/PlanAndDate";
 import UndoButton from "./components/UndoButton";
 import history from "./defy/history";
@@ -19,7 +18,6 @@ import {
 } from "use-query-params";
 import { PlanDetailsCard } from "./components/PlanDetailsCard";
 import { WeekStartsOn, WeekStartsOnValues } from "./ch/datecalc";
-import WeekStartsOnPicker from "./components/WeekStartsOnPicker";
 import { useMountEffect } from "./ch/hooks";
 import { Units, PlanSummary, dayOfWeek } from "types/app";
 import { getLocaleUnits } from "./ch/localize";
@@ -163,15 +161,10 @@ const App = () => {
         dateChangeHandler={onSelectedEndDateChange}
         selectedPlanChangeHandler={onSelectedPlanChange}
         weekStartsOn={weekStartsOn}
+        weekStartsOnChangeHandler={onWeekStartsOnChanged}
+        selectedUnits={selectedUnits}
+        unitsChangeHandler={onSelectedUnitsChanged}
       />
-      <div className="second-toolbar">
-        <div className="units">
-          <UnitsButtons
-            units={selectedUnits}
-            unitsChangeHandler={onSelectedUnitsChanged}
-          />
-        </div>
-      </div>
       <div className="second-toolbar">
         <button className="app-button" onClick={downloadIcalHandler}>Download iCal</button>
         <button className="app-button" onClick={downloadCsvHandler}>Download CSV</button>
@@ -181,12 +174,6 @@ const App = () => {
         />
       </div>
       <PlanDetailsCard racePlan={racePlan} />
-      <div className="second-toolbar">
-        <WeekStartsOnPicker
-          weekStartsOn={weekStartsOn}
-          changeHandler={onWeekStartsOnChanged}
-        />
-      </div>
       <div className="main-ui">
         {racePlan && (
           <CalendarGrid
