@@ -140,7 +140,7 @@ const PlanPicker = ({
                 return a.name.localeCompare(b.name);
               }).map(plan => (
                 <option key={plan.id} value={plan.id}>
-                  ({plan.type}) {plan.name}
+                  {plan.name}
                 </option>
               ))}
             </optgroup>
