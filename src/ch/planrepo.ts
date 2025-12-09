@@ -41,6 +41,18 @@ class PlanRepo {
   }
 
   async fetch(a: PlanSummary): Promise<TrainingPlan> {
+    if (a.id === 'none') {
+      // Return a minimal empty plan for the "none" placeholder
+      return {
+        id: 'none',
+        name: 'Select a plan',
+        description: 'Please select a training plan from the dropdown above.',
+        units: 'mi',
+        type: 'Marathon',
+        schedule: [],
+        source: ''
+      };
+    }
     return await fetchWithCache(url(a), this._cache);
   }
 }
