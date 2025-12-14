@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 
 interface PaceData {
-  [key: string]: string;
+  pace_range: string;
+  vo2_percent: string;
 }
 
 interface PacesHistory {
@@ -50,22 +51,26 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "" }) => {
   };
 
   const formatPace = (paceStr: string): string => {
-    // Convert pace format if needed (e.g., "4:30" to "4:30/mi")
-    if (paceStr.includes(":")) {
-      return `${paceStr}/mi`;
-    }
+    // Pace ranges are already formatted (e.g., "8:53/mi - …", "8:17/mi - 9:44/mi")
     return paceStr;
+  };
+
+  const formatVO2Percent = (vo2Str: string): string => {
+    // VO2 percentages are already formatted (e.g., "Up to 70% vVO2max", "64% - 75% vVO2max")
+    return vo2Str;
   };
 
   const getPaceColor = (paceType: string): string => {
     // Color code different pace types
     const colors: { [key: string]: string } = {
+      "Recovery": "#95a5a6",
+      "Aerobic": "#3498db",
+      "Long/Medium long": "#27ae60",
       "Marathon": "#e74c3c",
-      "Half Marathon": "#f39c12",
-      "10K": "#27ae60",
-      "5K": "#3498db",
-      "Tempo": "#9b59b6",
-      "Threshold": "#e67e22",
+      "Lactate threshold": "#f39c12",
+      "VO2max": "#9b59b6",
+      "Tempo": "#e67e22",
+      "Threshold": "#f39c12",
       "Easy": "#95a5a6"
     };
 
@@ -122,10 +127,10 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "" }) => {
       {pacesData && !loading && (
         <div className="paces-grid" style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
           gap: "1rem"
         }}>
-          {Object.entries(pacesData).map(([paceType, paceValue]) => (
+          {Object.entries(pacesData).map(([paceType, paceInfo]) => (
             <div
               key={paceType}
               className="pace-item"
@@ -141,20 +146,32 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "" }) => {
                   fontSize: "0.9rem",
                   fontWeight: "bold",
                   color: getPaceColor(paceType),
-                  marginBottom: "0.25rem"
+                  marginBottom: "0.5rem"
                 }}
               >
                 {paceType}
               </div>
               <div
                 style={{
-                  fontSize: "1.2rem",
+                  fontSize: "1.1rem",
                   fontWeight: "900",
-                  color: "var(--text-color)"
+                  color: "var(--text-color)",
+                  marginBottom: "0.25rem"
                 }}
               >
-                {formatPace(paceValue)}
+                {formatPace(paceInfo.pace_range)}
               </div>
+              {paceInfo.vo2_percent && (
+                <div
+                  style={{
+                    fontSize: "0.8rem",
+                    color: "var(--text-color)",
+                    opacity: 0.8
+                  }}
+                >
+                  {formatVO2Percent(paceInfo.vo2_percent)}
+                </div>
+              )}
             </div>
           ))}
         </div>

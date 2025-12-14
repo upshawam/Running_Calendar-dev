@@ -22,9 +22,26 @@ def parse_training_paces_html(html_content):
         cells = row.find_all('td')
         if len(cells) >= 2:
             pace_type = cells[0].get_text(strip=True)
-            pace_value = cells[1].get_text(strip=True)
-            if pace_type and pace_value:
-                paces[pace_type] = pace_value
+            
+            # Handle different table formats
+            if len(cells) >= 3:
+                # Format: Pace Type | Pace Range | % vVO2max
+                pace_range = cells[1].get_text(strip=True)
+                vo2_percent = cells[2].get_text(strip=True)
+                pace_data = {
+                    "pace_range": pace_range,
+                    "vo2_percent": vo2_percent
+                }
+            else:
+                # Fallback: just pace value
+                pace_value = cells[1].get_text(strip=True)
+                pace_data = {
+                    "pace_range": pace_value,
+                    "vo2_percent": ""
+                }
+            
+            if pace_type:
+                paces[pace_type] = pace_data
     return paces
 
 def fetch_training_paces(username, password, output_dir="data"):
