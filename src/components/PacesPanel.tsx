@@ -29,7 +29,7 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "" }) => {
     setError(null);
 
     try {
-      const response = await fetch(`/data/${user}_paces.json`);
+      const response = await fetch(`${import.meta.env.BASE_URL}data/${user}_paces.json`);
       if (!response.ok) {
         throw new Error(`Failed to load paces for ${user}`);
       }
