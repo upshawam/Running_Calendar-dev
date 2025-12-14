@@ -89,7 +89,10 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "" }) => {
       border: "3px solid var(--secondary-color)",
       borderRadius: "0.5rem",
       padding: "1em",
-      margin: "1em 0"
+      margin: "1em 0",
+      position: "sticky",
+      top: "0",
+      zIndex: 100
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem" }}>
         <h3 style={{ margin: 0 }}>Training Paces</h3>
@@ -127,8 +130,8 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "" }) => {
       {pacesData && !loading && (
         <div className="paces-grid" style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-          gap: "1rem"
+          gridTemplateColumns: "repeat(6, 1fr)",
+          gap: "0.75rem"
         }}>
           {Object.entries(pacesData).map(([paceType, paceInfo]) => (
             <div
@@ -137,26 +140,26 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "" }) => {
               style={{
                 backgroundColor: "var(--secondary-color)",
                 borderRadius: "0.25rem",
-                padding: "0.75rem",
+                padding: "0.5rem",
                 textAlign: "center"
               }}
             >
               <div
                 style={{
-                  fontSize: "0.9rem",
+                  fontSize: "0.85rem",
                   fontWeight: "bold",
                   color: getPaceColor(paceType),
-                  marginBottom: "0.5rem"
+                  marginBottom: "0.4rem"
                 }}
               >
                 {paceType}
               </div>
               <div
                 style={{
-                  fontSize: "1.1rem",
+                  fontSize: "1rem",
                   fontWeight: "900",
                   color: "var(--text-color)",
-                  marginBottom: "0.25rem"
+                  marginBottom: "0.2rem"
                 }}
               >
                 {formatPace(paceInfo.pace_range)}
@@ -164,7 +167,7 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "" }) => {
               {paceInfo.vo2_percent && (
                 <div
                   style={{
-                    fontSize: "0.8rem",
+                    fontSize: "0.75rem",
                     color: "var(--text-color)",
                     opacity: 0.8
                   }}
