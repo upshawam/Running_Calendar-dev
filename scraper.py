@@ -3,145 +3,269 @@ import os
 import argparse
 from playwright.sync_api import sync_playwright
 
-def auto_login(page, username, password):
-    """Automatically log in to Runalyze using provided credentials."""
-    print(f"Navigating to login page...")
-    page.goto("https://runalyze.com/login", wait_until="domcontentloaded")
+def auto_login(storage_path, username, password, debug=False):
+    """Automatically log in to Runalyze and save storage state."""
+    print(f"Starting auto-login for {username}...")
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=not debug)
+        context = browser.new_context()
 
-    # Wait for the page to load and check if we're already logged in
-    page.wait_for_load_state("networkidle", timeout=30000)
-    print("Page loaded, checking login form...")
-
-    # Check if we're already logged in (redirected to dashboard)
-    if "login" not in page.url and ("dashboard" in page.url or "athlete" in page.url):
-        print("Already logged in, skipping login")
-        return
-
-    # Try multiple selector strategies for username field
-    username_selectors = [
-        "input[name='username']",
-        "input[name='email']",
-        "input[type='email']",
-        "input[placeholder*='email']",
-        "input[placeholder*='Email']",
-        "#username",
-        "#email",
-        ".username",
-        ".email"
-    ]
-
-    username_field = None
-    for selector in username_selectors:
         try:
-            page.wait_for_selector(selector, timeout=5000)
-            username_field = page.query_selector(selector)
-            if username_field:
-                print(f"Found username field with selector: {selector}")
-                break
-        except:
-            continue
+            page = context.new_page()
+            print("Navigating to login page...")
+            page.goto("https://runalyze.com/login", wait_until="domcontentloaded")
 
-    if not username_field:
-        print("Available input fields:")
-        inputs = page.query_selector_all("input")
-        for i, inp in enumerate(inputs):
-            print(f"  {i}: {inp.get_attribute('name')} - {inp.get_attribute('type')} - {inp.get_attribute('placeholder')}")
+            # Wait for the page to load
+            page.wait_for_load_state("networkidle", timeout=30000)
+            print("Page loaded, attempting login...")
 
-        raise Exception("Could not find username/email input field")
+            # Try multiple selector strategies for username field
+            username_selectors = [
+                "input[name='username']",
+                "input[name='email']",
+                "input[type='email']",
+                "input[placeholder*='email']",
+                "input[placeholder*='Email']",
+                "#username",
+                "#email",
+                ".username",
+                ".email"
+            ]
 
-    # Fill username
-    username_field.fill(username)
-    print("Filled username")
+            username_field = None
+            for selector in username_selectors:
+                try:
+                    page.wait_for_selector(selector, timeout=5000)
+                    username_field = page.query_selector(selector)
+                    if username_field:
+                        print(f"Found username field with selector: {selector}")
+                        break
+                except:
+                    continue
 
-    # Try multiple selector strategies for password field
-    password_selectors = [
-        "input[name='password']",
-        "input[type='password']",
-        "#password",
-        ".password"
-    ]
+            if not username_field:
+                print("Available input fields:")
+                inputs = page.query_selector_all("input")
+                for i, inp in enumerate(inputs):
+                    print(f"  {i}: {inp.get_attribute('name')} - {inp.get_attribute('type')} - {inp.get_attribute('placeholder')}")
+                raise Exception("Could not find username/email input field")
 
-    password_field = None
-    for selector in password_selectors:
-        try:
-            password_field = page.query_selector(selector)
-            if password_field:
-                print(f"Found password field with selector: {selector}")
-                break
-        except:
-            continue
+            # Fill username
+            username_field.fill(username)
+            print("Filled username")
 
-    if not password_field:
-        raise Exception("Could not find password input field")
+            # Try multiple selector strategies for password field
+            password_selectors = [
+                "input[name='password']",
+                "input[type='password']",
+                "#password",
+                ".password"
+            ]
 
-    # Fill password
-    password_field.fill(password)
-    print("Filled password")
+            password_field = None
+            for selector in password_selectors:
+                try:
+                    password_field = page.query_selector(selector)
+                    if password_field:
+                        print(f"Found password field with selector: {selector}")
+                        break
+                except:
+                    continue
 
-    # Try multiple selector strategies for submit button
-    submit_selectors = [
-        "button[type='submit']",
-        "input[type='submit']",
-        "button:has-text('Login')",
-        "button:has-text('Sign in')",
-        "button:has-text('Log in')",
-        ".btn-primary",
-        "#login-submit"
-    ]
+            if not password_field:
+                raise Exception("Could not find password input field")
 
-    submit_button = None
-    for selector in submit_selectors:
-        try:
-            submit_button = page.query_selector(selector)
-            if submit_button:
-                print(f"Found submit button with selector: {selector}")
-                break
-        except:
-            continue
+            # Fill password
+            password_field.fill(password)
+            print("Filled password")
 
-    if not submit_button:
-        print("Available buttons:")
-        buttons = page.query_selector_all("button, input[type='submit']")
-        for i, btn in enumerate(buttons):
-            print(f"  {i}: {btn.get_attribute('type')} - {btn.text_content()}")
+            # Try multiple selector strategies for submit button
+            submit_selectors = [
+                "button[type='submit']",
+                "input[type='submit']",
+                "button:has-text('Login')",
+                "button:has-text('Sign in')",
+                "button:has-text('Log in')",
+                ".btn-primary",
+                "#login-submit"
+            ]
 
-        raise Exception("Could not find submit button")
+            submit_button = None
+            for selector in submit_selectors:
+                try:
+                    submit_button = page.query_selector(selector)
+                    if submit_button:
+                        print(f"Found submit button with selector: {selector}")
+                        break
+                except:
+                    continue
 
-    # Click submit and wait for navigation
-    submit_button.click()
-    print("Clicked submit button")
+            if not submit_button:
+                print("Available buttons:")
+                buttons = page.query_selector_all("button, input[type='submit']")
+                for i, btn in enumerate(buttons):
+                    print(f"  {i}: {btn.get_attribute('type')} - {btn.text_content()}")
 
-    # Wait for successful login (either redirect or login success indicator)
-    try:
-        page.wait_for_url(lambda url: "login" not in url, timeout=30000)
-        print("Login successful - redirected away from login page")
-    except:
-        # Check if we're still on login page (login failed)
-        if "login" in page.url:
-            print("Still on login page - login may have failed")
-            # Check for error messages
-            error_selectors = [".alert-danger", ".error", ".login-error", "[class*='error']"]
-            for selector in error_selectors:
-                error_elem = page.query_selector(selector)
-                if error_elem:
-                    print(f"Login error: {error_elem.text_content()}")
-                    break
-            raise Exception("Login failed - still on login page")
+                raise Exception("Could not find submit button")
+
+            # Click submit and wait for navigation
+            submit_button.click()
+            print("Clicked submit button")
+
+            # Wait for successful login (either redirect or login success indicator)
+            try:
+                page.wait_for_url(lambda url: "login" not in url, timeout=30000)
+                print("Login successful - redirected away from login page")
+            except:
+                # Check if we're still on login page (login failed)
+                if "login" in page.url:
+                    print("Still on login page - login may have failed")
+                    # Check for error messages
+                    error_selectors = [".alert-danger", ".error", ".login-error", "[class*='error']"]
+                    for selector in error_selectors:
+                        error_elem = page.query_selector(selector)
+                        if error_elem:
+                            print(f"Login error: {error_elem.text_content()}")
+                            break
+                    raise Exception("Login failed - still on login page")
+                else:
+                    print("Login appears successful")
+
+            # Save storage state
+            os.makedirs(os.path.dirname(storage_path), exist_ok=True)
+            context.storage_state(path=storage_path)
+            print(f"Storage state saved to {storage_path}")
+
+        finally:
+            browser.close()
+
+def fetch_data(storage_path, user, output_dir="public/data", debug=False):
+    """Fetch training data using saved storage state."""
+    print(f"Starting data fetch for {user}...")
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=not debug)
+
+        # Load storage state if it exists
+        context_options = {}
+        if os.path.exists(storage_path):
+            context_options["storage_state"] = storage_path
+            print(f"Loaded storage state from {storage_path}")
         else:
-            print("Login appears successful")
+            print(f"Storage state file {storage_path} not found, will need to login first")
+
+        context = browser.new_context(**context_options)
+        page = context.new_page()
+
+        try:
+            # Fetch training paces
+            print("Fetching training paces...")
+            page.goto("https://runalyze.com/athlete/training-paces")
+            page.wait_for_load_state("load")
+
+            # Wait for the panel to load
+            page.wait_for_selector(".panel-body", timeout=60000)
+
+            # Get the HTML of the training paces panel
+            panel_html = page.query_selector(".panel-body").inner_html()
+
+            paces = parse_training_paces_html(panel_html)
+
+            # Accumulate history
+            paces_file = os.path.join(output_dir, f"{user}_paces.json")
+            if os.path.exists(paces_file):
+                with open(paces_file, 'r') as f:
+                    history = json.load(f)
+            else:
+                history = []
+
+            from datetime import datetime
+            history.append({
+                "date": datetime.now().isoformat(),
+                "paces": paces
+            })
+
+            with open(paces_file, 'w') as f:
+                json.dump(history, f, indent=4)
+
+            print(f"Saved {len(paces)} pace entries to {paces_file}")
+
+            # Fetch prognosis
+            print("Fetching prognosis...")
+            page.goto("https://runalyze.com/athlete/prognosis")
+            page.wait_for_load_state("load")
+
+            # Wait for the panel to load
+            page.wait_for_selector(".panel-body", timeout=60000)
+
+            # Get the HTML of the prognosis panel
+            panel_html = page.query_selector(".panel-body").inner_html()
+
+            prognosis = parse_prognosis_html(panel_html)
+
+            # Accumulate history
+            prognosis_file = os.path.join(output_dir, f"{user}_prognosis.json")
+            if os.path.exists(prognosis_file):
+                with open(prognosis_file, 'r') as f:
+                    history = json.load(f)
+            else:
+                history = []
+
+            history.append({
+                "date": datetime.now().isoformat(),
+                "prognosis": prognosis
+            })
+
+            with open(prognosis_file, 'w') as f:
+                json.dump(history, f, indent=4)
+
+            print(f"Saved {len(prognosis)} prognosis entries to {prognosis_file}")
+
+            # Fetch VO2 max
+            print("Fetching VO2 max...")
+            page.goto("https://runalyze.com/athlete/vo2max")
+            page.wait_for_load_state("load")
+
+            # Wait for the panel to load
+            page.wait_for_selector(".panel-body", timeout=60000)
+
+            # Get the HTML of the VO2 max panel
+            panel_html = page.query_selector(".panel-body").inner_html()
+
+            vo2 = parse_vo2_html(panel_html)
+
+            # Accumulate history
+            vo2_file = os.path.join(output_dir, f"{user}_vo2.json")
+            if os.path.exists(vo2_file):
+                with open(vo2_file, 'r') as f:
+                    history = json.load(f)
+            else:
+                history = []
+
+            history.append({
+                "date": datetime.now().isoformat(),
+                "vo2": vo2
+            })
+
+            with open(vo2_file, 'w') as f:
+                json.dump(history, f, indent=4)
+
+            print(f"Saved {len(vo2)} VO2 entries to {vo2_file}")
+
+        finally:
+            browser.close()
 
 def parse_training_paces_html(html_content):
     """Parse training paces from the HTML content of the training paces panel."""
     from bs4 import BeautifulSoup
     soup = BeautifulSoup(html_content, 'html.parser')
-    
+
     paces = {}
     pace_rows = soup.find_all('tr')
     for row in pace_rows:
         cells = row.find_all('td')
         if len(cells) >= 2:
             pace_type = cells[0].get_text(strip=True)
-            
+
             # Handle different table formats
             if len(cells) >= 3:
                 # Format: Pace Type | Pace Range | % vVO2max
@@ -158,56 +282,16 @@ def parse_training_paces_html(html_content):
                     "pace_range": pace_value,
                     "vo2_percent": ""
                 }
-            
+
             if pace_type:
                 paces[pace_type] = pace_data
     return paces
-
-def fetch_training_paces(username, password, output_dir="data", debug=False):
-    """Fetch training paces from Runalyze and save to JSON."""
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=not debug)
-        page = browser.new_page()
-        
-        try:
-            auto_login(page, username, password)
-            page.goto("https://runalyze.com/athlete/training-paces")
-            page.wait_for_load_state("load")
-            
-            # Wait for the panel to load
-            page.wait_for_selector(".panel-body", timeout=60000)
-            
-            # Get the HTML of the training paces panel
-            panel_html = page.query_selector(".panel-body").inner_html()
-            
-            paces = parse_training_paces_html(panel_html)
-            
-            # Accumulate history
-            paces_file = os.path.join(output_dir, f"{username}_paces.json")
-            if os.path.exists(paces_file):
-                with open(paces_file, 'r') as f:
-                    history = json.load(f)
-            else:
-                history = []
-            
-            from datetime import datetime
-            history.append({
-                "date": datetime.now().isoformat(),
-                "paces": paces
-            })
-            
-            with open(paces_file, 'w') as f:
-                json.dump(history, f, indent=4)
-            
-            return paces
-        finally:
-            browser.close()
 
 def parse_prognosis_html(html_content):
     """Parse prognosis data from the HTML content."""
     from bs4 import BeautifulSoup
     soup = BeautifulSoup(html_content, 'html.parser')
-    
+
     prognosis = {}
     rows = soup.find_all('tr')
     for row in rows:
@@ -219,51 +303,11 @@ def parse_prognosis_html(html_content):
                 prognosis[key] = value
     return prognosis
 
-def fetch_prognosis(username, password, output_dir="data", debug=False):
-    """Fetch prognosis from Runalyze and save to JSON."""
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=not debug)
-        page = browser.new_page()
-        
-        try:
-            auto_login(page, username, password)
-            page.goto("https://runalyze.com/athlete/prognosis")
-            page.wait_for_load_state("load")
-            
-            # Wait for the panel to load
-            page.wait_for_selector(".panel-body", timeout=60000)
-            
-            # Get the HTML of the prognosis panel
-            panel_html = page.query_selector(".panel-body").inner_html()
-            
-            prognosis = parse_prognosis_html(panel_html)
-            
-            # Accumulate history
-            prognosis_file = os.path.join(output_dir, f"{username}_prognosis.json")
-            if os.path.exists(prognosis_file):
-                with open(prognosis_file, 'r') as f:
-                    history = json.load(f)
-            else:
-                history = []
-            
-            from datetime import datetime
-            history.append({
-                "date": datetime.now().isoformat(),
-                "prognosis": prognosis
-            })
-            
-            with open(prognosis_file, 'w') as f:
-                json.dump(history, f, indent=4)
-            
-            return prognosis
-        finally:
-            browser.close()
-
 def parse_vo2_html(html_content):
     """Parse VO2 max data from the HTML content."""
     from bs4 import BeautifulSoup
     soup = BeautifulSoup(html_content, 'html.parser')
-    
+
     vo2 = {}
     rows = soup.find_all('tr')
     for row in rows:
@@ -275,69 +319,31 @@ def parse_vo2_html(html_content):
                 vo2[key] = value
     return vo2
 
-def fetch_vo2(username, password, output_dir="data", debug=False):
-    """Fetch VO2 max from Runalyze and save to JSON."""
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=not debug)
-        page = browser.new_page()
-        
-        try:
-            auto_login(page, username, password)
-            page.goto("https://runalyze.com/athlete/vo2max")
-            page.wait_for_load_state("load")
-            
-            # Wait for the panel to load
-            page.wait_for_selector(".panel-body", timeout=60000)
-            
-            # Get the HTML of the VO2 panel
-            panel_html = page.query_selector(".panel-body").inner_html()
-            
-            vo2 = parse_vo2_html(panel_html)
-            
-            # Accumulate history
-            vo2_file = os.path.join(output_dir, f"{username}_vo2.json")
-            if os.path.exists(vo2_file):
-                with open(vo2_file, 'r') as f:
-                    history = json.load(f)
-            else:
-                history = []
-            
-            from datetime import datetime
-            history.append({
-                "date": datetime.now().isoformat(),
-                "vo2": vo2
-            })
-            
-            with open(vo2_file, 'w') as f:
-                json.dump(history, f, indent=4)
-            
-            return vo2
-        finally:
-            browser.close()
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Scrape training data from Runalyze")
-    parser.add_argument("--username", required=True, help="Runalyze username")
-    parser.add_argument("--password", required=True, help="Runalyze password")
-    parser.add_argument("--user", required=True, help="User identifier (aaron or kristin)")
-    parser.add_argument("--output-dir", default="public/data", help="Output directory for JSON files")
-    parser.add_argument("--debug", action="store_true", help="Enable debug output")
+    subparsers = parser.add_subparsers(dest='command', help='Available commands')
+
+    # Auto-login command
+    login_parser = subparsers.add_parser('auto-login', help='Login and save storage state')
+    login_parser.add_argument('--storage', required=True, help='Path to save storage state')
+    login_parser.add_argument('--username', required=True, help='Runalyze username')
+    login_parser.add_argument('--password', required=True, help='Runalyze password')
+    login_parser.add_argument('--debug', action='store_true', help='Enable debug mode')
+
+    # Fetch command
+    fetch_parser = subparsers.add_parser('fetch', help='Fetch data using saved storage state')
+    fetch_parser.add_argument('--storage', required=True, help='Path to load storage state')
+    fetch_parser.add_argument('--user', required=True, help='User identifier (aaron or kristin)')
+    fetch_parser.add_argument('--output-dir', default='public/data', help='Output directory for JSON files')
+    fetch_parser.add_argument('--debug', action='store_true', help='Enable debug mode')
 
     args = parser.parse_args()
 
-    # Ensure output directory exists
-    os.makedirs(args.output_dir, exist_ok=True)
-
-    print(f"Fetching training paces for {args.user}...")
-    paces = fetch_training_paces(args.username, args.password, args.output_dir, debug=args.debug)
-    print(f"Found {len(paces)} pace entries")
-
-    print(f"Fetching prognosis for {args.user}...")
-    prognosis = fetch_prognosis(args.username, args.password, args.output_dir, debug=args.debug)
-    print(f"Found {len(prognosis)} prognosis entries")
-
-    print(f"Fetching VO2 max for {args.user}...")
-    vo2 = fetch_vo2(args.username, args.password, args.output_dir, debug=args.debug)
-    print(f"Found {len(vo2)} VO2 entries")
-
-    print("Scraping complete!")
+    if args.command == 'auto-login':
+        auto_login(args.storage, args.username, args.password, debug=args.debug)
+    elif args.command == 'fetch':
+        # Ensure output directory exists
+        os.makedirs(args.output_dir, exist_ok=True)
+        fetch_data(args.storage, args.user, args.output_dir, debug=args.debug)
+    else:
+        parser.print_help()

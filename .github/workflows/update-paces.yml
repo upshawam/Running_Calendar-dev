@@ -4,7 +4,10 @@ on:
   schedule:
     # Run daily at 2 AM UTC
     - cron: '0 2 * * *'
-  workflow_dispatch: # Allow manual runs
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   scrape-paces:
@@ -13,11 +16,13 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.9'
+        python-version: '3.11'
 
     - name: Install dependencies
       run: |
@@ -25,41 +30,65 @@ jobs:
         pip install playwright beautifulsoup4 requests
 
     - name: Install Playwright browsers
-      run: playwright install chromium
+      run: playwright install --with-deps
 
-    - name: Create data directory
-      run: mkdir -p public/data
-
-    - name: Run scraper for Aaron
+    - name: Prepare storage files from secrets
       env:
-        RUNALYZE_USERNAME: ${{ secrets.AARON_RUNALYZE_USERNAME }}
-        RUNALYZE_PASSWORD: ${{ secrets.AARON_RUNALYZE_PASSWORD }}
-        DEBUG: true
+        STORAGE_KRISTIN: ${{ secrets.STORAGE_KRISTIN }}
+        STORAGE_AARON: ${{ secrets.STORAGE_AARON }}
       run: |
-        python3 scraper.py --username "$RUNALYZE_USERNAME" --password "$RUNALYZE_PASSWORD" --user aaron --output-dir public/data --debug
-
-    - name: Run scraper for Kristin
-      env:
-        RUNALYZE_USERNAME: ${{ secrets.KRISTIN_RUNALYZE_USERNAME }}
-        RUNALYZE_PASSWORD: ${{ secrets.KRISTIN_RUNALYZE_PASSWORD }}
-        DEBUG: true
-      run: |
-        python3 scraper.py --username "$RUNALYZE_USERNAME" --password "$RUNALYZE_PASSWORD" --user kristin --output-dir public/data --debug
-
-    - name: Check for changes
-      id: verify-changed-files
-      run: |
-        if [ -n "$(git status --porcelain)" ]; then
-          echo "changed=true" >> $GITHUB_OUTPUT
+        mkdir -p tmp
+        if [ -n "$STORAGE_KRISTIN" ]; then
+          echo "Writing storage_kristin.json"
+          echo "$STORAGE_KRISTIN" | base64 --decode > tmp/storage_kristin.json
         else
-          echo "changed=false" >> $GITHUB_OUTPUT
+          echo "STORAGE_KRISTIN secret not set, will create new"
+        fi
+        if [ -n "$STORAGE_AARON" ]; then
+          echo "Writing storage_aaron.json"
+          echo "$STORAGE_AARON" | base64 --decode > tmp/storage_aaron.json
+        else
+          echo "STORAGE_AARON secret not set, will create new"
         fi
 
-    - name: Commit and push changes
-      if: steps.verify-changed-files.outputs.changed == 'true'
+    - name: Auto-login Kristin
+      env:
+        USERNAME: ${{ secrets.KRISTIN_RUNALYZE_USERNAME }}
+        PASSWORD: ${{ secrets.KRISTIN_RUNALYZE_PASSWORD }}
       run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add public/data/
-        git commit -m "Update training paces data [automated]"
-        git push
+        if [ -n "$USERNAME" ] && [ -n "$PASSWORD" ]; then
+          python3 scraper.py auto-login --storage tmp/storage_kristin.json --username "$USERNAME" --password "$PASSWORD" --debug
+        else
+          echo "Credentials not set for Kristin"
+        fi
+
+    - name: Auto-login Aaron
+      env:
+        USERNAME: ${{ secrets.AARON_RUNALYZE_USERNAME }}
+        PASSWORD: ${{ secrets.AARON_RUNALYZE_PASSWORD }}
+      run: |
+        if [ -n "$USERNAME" ] && [ -n "$PASSWORD" ]; then
+          python3 scraper.py auto-login --storage tmp/storage_aaron.json --username "$USERNAME" --password "$PASSWORD" --debug
+        else
+          echo "Credentials not set for Aaron"
+        fi
+
+    - name: Run fetch script for each account
+      env:
+        PYTHONUNBUFFERED: 1
+      run: |
+        mkdir -p public/data
+        python3 scraper.py fetch --storage tmp/storage_kristin.json --user kristin --output-dir public/data --debug || echo "kristin fetch failed"
+        python3 scraper.py fetch --storage tmp/storage_aaron.json   --user aaron   --output-dir public/data --debug || echo "aaron fetch failed"
+        ls -la public/data || true
+
+    - name: Commit and push changes
+      env:
+        GIT_COMMITTER_NAME: "github-actions[bot]"
+        GIT_COMMITTER_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"
+      run: |
+        git config user.name "${GIT_COMMITTER_NAME}"
+        git config user.email "${GIT_COMMITTER_EMAIL}"
+        git add public/data || true
+        git commit -m "Update training paces data [automated]" || echo "No changes to commit"
+        git push origin HEAD:main
