@@ -57,7 +57,7 @@ jobs:
         PASSWORD: ${{ secrets.KRISTIN_RUNALYZE_PASSWORD }}
       run: |
         if [ -n "$USERNAME" ] && [ -n "$PASSWORD" ]; then
-          python3 scraper.py auto-login --storage tmp/storage_kristin.json --username "$USERNAME" --password "$PASSWORD" --debug
+          python3 scraper.py auto-login --storage tmp/storage_kristin.json --username "$USERNAME" --password "$PASSWORD"
         else
           echo "Credentials not set for Kristin"
         fi
@@ -68,7 +68,7 @@ jobs:
         PASSWORD: ${{ secrets.AARON_RUNALYZE_PASSWORD }}
       run: |
         if [ -n "$USERNAME" ] && [ -n "$PASSWORD" ]; then
-          python3 scraper.py auto-login --storage tmp/storage_aaron.json --username "$USERNAME" --password "$PASSWORD" --debug
+          python3 scraper.py auto-login --storage tmp/storage_aaron.json --username "$USERNAME" --password "$PASSWORD"
         else
           echo "Credentials not set for Aaron"
         fi
@@ -78,8 +78,8 @@ jobs:
         PYTHONUNBUFFERED: 1
       run: |
         mkdir -p public/data
-        python3 scraper.py fetch --storage tmp/storage_kristin.json --user kristin --output-dir public/data --debug || echo "kristin fetch failed"
-        python3 scraper.py fetch --storage tmp/storage_aaron.json   --user aaron   --output-dir public/data --debug || echo "aaron fetch failed"
+        python3 scraper.py fetch --storage tmp/storage_kristin.json --user kristin --output-dir public/data || echo "kristin fetch failed"
+        python3 scraper.py fetch --storage tmp/storage_aaron.json   --user aaron   --output-dir public/data || echo "aaron fetch failed"
         ls -la public/data || true
 
     - name: Commit and push changes

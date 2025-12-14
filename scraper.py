@@ -5,6 +5,13 @@ from playwright.sync_api import sync_playwright
 
 def auto_login(storage_path, username, password, debug=False):
     """Automatically log in to Runalyze and save storage state."""
+    # Force headless mode in CI environments
+    import os
+    is_ci = os.getenv('CI') == 'true' or os.getenv('GITHUB_ACTIONS') == 'true'
+    if is_ci:
+        debug = False
+        print("Running in CI environment, forcing headless mode")
+    
     print(f"Starting auto-login for {username}...")
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=not debug)
@@ -141,6 +148,13 @@ def auto_login(storage_path, username, password, debug=False):
 
 def fetch_data(storage_path, user, output_dir="public/data", debug=False):
     """Fetch training data using saved storage state."""
+    # Force headless mode in CI environments
+    import os
+    is_ci = os.getenv('CI') == 'true' or os.getenv('GITHUB_ACTIONS') == 'true'
+    if is_ci:
+        debug = False
+        print("Running in CI environment, forcing headless mode")
+    
     print(f"Starting data fetch for {user}...")
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=not debug)
