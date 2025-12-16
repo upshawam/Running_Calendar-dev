@@ -173,14 +173,32 @@ def fetch_data(storage_path, user, output_dir="docs/data", debug=False):
         try:
             # Fetch training paces
             print("Fetching training paces...")
-            page.goto("https://runalyze.com/athlete/training-paces")
-            page.wait_for_load_state("load")
+            page.goto("https://runalyze.com/athlete/training-paces", wait_until="domcontentloaded")
+            page.wait_for_load_state("networkidle", timeout=30000)
 
-            # Wait for the panel to load
-            page.wait_for_selector(".panel-body", timeout=60000)
-
-            # Get the HTML of the training paces panel
-            panel_html = page.query_selector(".panel-body").inner_html()
+            # Wait for the panel to load - try multiple selectors
+            panel_html = None
+            try:
+                page.wait_for_selector(".panel-body", timeout=10000)
+                panel_html = page.query_selector(".panel-body").inner_html()
+                print("Found panel using .panel-body selector")
+            except:
+                print("Could not find .panel-body, trying alternative selectors...")
+                # Try other common selectors
+                for selector in ["[class*='panel']", "main", "[role='main']", ".content"]:
+                    try:
+                        element = page.query_selector(selector)
+                        if element:
+                            panel_html = element.inner_html()
+                            print(f"Found content using selector: {selector}")
+                            break
+                    except:
+                        continue
+                
+                if not panel_html:
+                    print("Could not find panel with any selector. Page HTML:")
+                    print(page.content()[:1000])
+                    raise Exception("Could not find training paces panel on page")
 
             paces = parse_training_paces_html(panel_html)
 
@@ -205,18 +223,38 @@ def fetch_data(storage_path, user, output_dir="docs/data", debug=False):
 
             # Fetch prognosis
             print("Fetching prognosis...")
-            page.goto("https://runalyze.com/athlete/prognosis")
-            page.wait_for_load_state("load")
+            page.goto("https://runalyze.com/athlete/prognosis", wait_until="domcontentloaded")
+            page.wait_for_load_state("networkidle", timeout=30000)
 
-            # Wait for the panel to load
-            page.wait_for_selector(".panel-body", timeout=60000)
+            # Wait for the panel to load - try multiple selectors
+            panel_html = None
+            try:
+                page.wait_for_selector(".panel-body", timeout=10000)
+                panel_html = page.query_selector(".panel-body").inner_html()
+                print("Found prognosis panel using .panel-body selector")
+            except:
+                print("Could not find .panel-body for prognosis, trying alternative selectors...")
+                for selector in ["[class*='panel']", "main", "[role='main']", ".content"]:
+                    try:
+                        element = page.query_selector(selector)
+                        if element:
+                            panel_html = element.inner_html()
+                            print(f"Found prognosis using selector: {selector}")
+                            break
+                    except:
+                        continue
+                
+                if not panel_html:
+                    print("Could not find prognosis panel, skipping...")
+                    prognosis = {}
+                    panel_html = ""
 
-            # Get the HTML of the prognosis panel
-            panel_html = page.query_selector(".panel-body").inner_html()
+            if panel_html:
+                prognosis = parse_prognosis_html(panel_html)
+            else:
+                prognosis = {}
 
-            prognosis = parse_prognosis_html(panel_html)
-
-            # Accumulate history
+            # Accumulate history for prognosis
             prognosis_file = os.path.join(output_dir, f"{user}_prognosis.json")
             if os.path.exists(prognosis_file):
                 with open(prognosis_file, 'r') as f:
@@ -224,30 +262,54 @@ def fetch_data(storage_path, user, output_dir="docs/data", debug=False):
             else:
                 history = []
 
-            history.append({
-                "date": datetime.now().isoformat(),
-                "prognosis": prognosis
-            })
+            if prognosis:  # Only append if we have data
+                from datetime import datetime
+                history.append({
+                    "date": datetime.now().isoformat(),
+                    "prognosis": prognosis
+                })
 
-            with open(prognosis_file, 'w') as f:
-                json.dump(history, f, indent=4)
+                with open(prognosis_file, 'w') as f:
+                    json.dump(history, f, indent=4)
 
-            print(f"Saved {len(prognosis)} prognosis entries to {prognosis_file}")
+                print(f"Saved {len(prognosis)} prognosis entries to {prognosis_file}")
+            else:
+                print("No prognosis data to save")
 
             # Fetch VO2 max
             print("Fetching VO2 max...")
-            page.goto("https://runalyze.com/athlete/vo2max")
-            page.wait_for_load_state("load")
+            page.goto("https://runalyze.com/athlete/vo2max", wait_until="domcontentloaded")
+            page.wait_for_load_state("networkidle", timeout=30000)
 
-            # Wait for the panel to load
-            page.wait_for_selector(".panel-body", timeout=60000)
+            # Wait for the panel to load - try multiple selectors
+            panel_html = None
+            try:
+                page.wait_for_selector(".panel-body", timeout=10000)
+                panel_html = page.query_selector(".panel-body").inner_html()
+                print("Found VO2 panel using .panel-body selector")
+            except:
+                print("Could not find .panel-body for VO2, trying alternative selectors...")
+                for selector in ["[class*='panel']", "main", "[role='main']", ".content"]:
+                    try:
+                        element = page.query_selector(selector)
+                        if element:
+                            panel_html = element.inner_html()
+                            print(f"Found VO2 using selector: {selector}")
+                            break
+                    except:
+                        continue
+                
+                if not panel_html:
+                    print("Could not find VO2 panel, skipping...")
+                    vo2 = {}
+                    panel_html = ""
 
-            # Get the HTML of the VO2 max panel
-            panel_html = page.query_selector(".panel-body").inner_html()
+            if panel_html:
+                vo2 = parse_vo2_html(panel_html)
+            else:
+                vo2 = {}
 
-            vo2 = parse_vo2_html(panel_html)
-
-            # Accumulate history
+            # Accumulate history for VO2
             vo2_file = os.path.join(output_dir, f"{user}_vo2.json")
             if os.path.exists(vo2_file):
                 with open(vo2_file, 'r') as f:
@@ -255,15 +317,19 @@ def fetch_data(storage_path, user, output_dir="docs/data", debug=False):
             else:
                 history = []
 
-            history.append({
-                "date": datetime.now().isoformat(),
-                "vo2": vo2
-            })
+            if vo2:  # Only append if we have data
+                from datetime import datetime
+                history.append({
+                    "date": datetime.now().isoformat(),
+                    "vo2": vo2
+                })
 
-            with open(vo2_file, 'w') as f:
-                json.dump(history, f, indent=4)
+                with open(vo2_file, 'w') as f:
+                    json.dump(history, f, indent=4)
 
-            print(f"Saved {len(vo2)} VO2 entries to {vo2_file}")
+                print(f"Saved {len(vo2)} VO2 entries to {vo2_file}")
+            else:
+                print("No VO2 data to save")
 
         finally:
             browser.close()
