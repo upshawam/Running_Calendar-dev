@@ -179,13 +179,13 @@ def fetch_data(storage_path, user, output_dir="docs/data", debug=False):
             # Wait for the panel to load - try multiple selectors
             panel_html = None
             try:
-                page.wait_for_selector(".panel-body", timeout=10000)
-                panel_html = page.query_selector(".panel-body").inner_html()
-                print("Found panel using .panel-body selector")
+                page.wait_for_selector(".panel-content", timeout=10000)
+                panel_html = page.query_selector(".panel-content").inner_html()
+                print("Found panel using .panel-content selector")
             except:
-                print("Could not find .panel-body, trying alternative selectors...")
+                print("Could not find .panel-content, trying alternative selectors...")
                 # Try other common selectors
-                for selector in ["[class*='panel']", "main", "[role='main']", ".content"]:
+                for selector in [".panel-body", "[class*='panel']", "main", "[role='main']", ".content"]:
                     try:
                         element = page.query_selector(selector)
                         if element:
@@ -197,7 +197,7 @@ def fetch_data(storage_path, user, output_dir="docs/data", debug=False):
                 
                 if not panel_html:
                     print("Could not find panel with any selector. Page HTML:")
-                    print(page.content()[:1000])
+                    print(page.content()[:2000])
                     raise Exception("Could not find training paces panel on page")
 
             paces = parse_training_paces_html(panel_html)
@@ -229,12 +229,12 @@ def fetch_data(storage_path, user, output_dir="docs/data", debug=False):
             # Wait for the panel to load - try multiple selectors
             panel_html = None
             try:
-                page.wait_for_selector(".panel-body", timeout=10000)
-                panel_html = page.query_selector(".panel-body").inner_html()
-                print("Found prognosis panel using .panel-body selector")
+                page.wait_for_selector(".panel-content", timeout=10000)
+                panel_html = page.query_selector(".panel-content").inner_html()
+                print("Found prognosis panel using .panel-content selector")
             except:
-                print("Could not find .panel-body for prognosis, trying alternative selectors...")
-                for selector in ["[class*='panel']", "main", "[role='main']", ".content"]:
+                print("Could not find .panel-content for prognosis, trying alternative selectors...")
+                for selector in [".panel-body", "[class*='panel']", "main", "[role='main']", ".content"]:
                     try:
                         element = page.query_selector(selector)
                         if element:
@@ -284,12 +284,12 @@ def fetch_data(storage_path, user, output_dir="docs/data", debug=False):
             # Wait for the panel to load - try multiple selectors
             panel_html = None
             try:
-                page.wait_for_selector(".panel-body", timeout=10000)
-                panel_html = page.query_selector(".panel-body").inner_html()
-                print("Found VO2 panel using .panel-body selector")
+                page.wait_for_selector(".panel-content", timeout=10000)
+                panel_html = page.query_selector(".panel-content").inner_html()
+                print("Found VO2 panel using .panel-content selector")
             except:
-                print("Could not find .panel-body for VO2, trying alternative selectors...")
-                for selector in ["[class*='panel']", "main", "[role='main']", ".content"]:
+                print("Could not find .panel-content for VO2, trying alternative selectors...")
+                for selector in [".panel-body", "[class*='panel']", "main", "[role='main']", ".content"]:
                     try:
                         element = page.query_selector(selector)
                         if element:
@@ -340,31 +340,34 @@ def parse_training_paces_html(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
 
     paces = {}
-    pace_rows = soup.find_all('tr')
-    for row in pace_rows:
-        cells = row.find_all('td')
-        if len(cells) >= 2:
-            pace_type = cells[0].get_text(strip=True)
-
-            # Handle different table formats
-            if len(cells) >= 3:
-                # Format: Pace Type | Pace Range | % vVO2max
-                pace_range = cells[1].get_text(strip=True)
-                vo2_percent = cells[2].get_text(strip=True)
-                pace_data = {
-                    "pace_range": pace_range,
-                    "vo2_percent": vo2_percent
-                }
-            else:
-                # Fallback: just pace value
-                pace_value = cells[1].get_text(strip=True)
-                pace_data = {
-                    "pace_range": pace_value,
-                    "vo2_percent": ""
-                }
-
-            if pace_type:
-                paces[pace_type] = pace_data
+    
+    # Parse <p> tags containing pace info
+    # Structure: <p><span class="right">pace_range</span><strong>type</strong><small>vo2%</small></p>
+    pace_paragraphs = soup.find_all('p')
+    for p in pace_paragraphs:
+        strong = p.find('strong')
+        span_right = p.find('span', class_='right')
+        small = p.find('small')
+        
+        if strong and span_right:
+            pace_type = strong.get_text(strip=True)
+            pace_range = span_right.get_text(strip=True)
+            
+            # Extract VO2 percentage from small tag (e.g., "(64 - 75%)")
+            vo2_percent = ""
+            if small:
+                vo2_text = small.get_text(strip=True)
+                # Extract just the percentage part
+                import re
+                match = re.search(r'(\d+\s*-\s*\d+%)', vo2_text)
+                if match:
+                    vo2_percent = match.group(1)
+            
+            paces[pace_type] = {
+                "pace_range": pace_range,
+                "vo2_percent": vo2_percent
+            }
+    
     return paces
 
 def parse_prognosis_html(html_content):
