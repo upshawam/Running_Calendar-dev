@@ -17,6 +17,7 @@ interface PacesPanelProps {
 const PacesPanel: React.FC<PacesPanelProps> = ({ className = "" }) => {
   const [selectedUser, setSelectedUser] = useState<"aaron" | "kristin">("aaron");
   const [pacesData, setPacesData] = useState<PaceData | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,12 +40,15 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "" }) => {
         // Get the most recent paces data
         const latestData = history[history.length - 1];
         setPacesData(latestData.paces);
+        setLastUpdated(latestData.date);
       } else {
         setPacesData(null);
+        setLastUpdated(null);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load paces");
       setPacesData(null);
+      setLastUpdated(null);
     } finally {
       setLoading(false);
     }
@@ -94,42 +98,54 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "" }) => {
       top: "0",
       zIndex: 100
     }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
-        <h3 style={{ margin: 0, fontSize: "1.1rem" }}>Training Paces</h3>
-        <div style={{ display: "flex", gap: "0.5rem" }}>
-          <button
-            onClick={() => setSelectedUser("aaron")}
-            style={{
-              padding: "0.4rem 0.8rem",
-              fontSize: "0.9rem",
-              fontWeight: selectedUser === "aaron" ? "bold" : "normal",
-              backgroundColor: selectedUser === "aaron" ? "var(--secondary-color)" : "transparent",
-              color: "var(--text-color)",
-              border: "2px solid var(--secondary-color)",
-              borderRadius: "0.25rem",
-              cursor: "pointer",
-              transition: "all 0.2s"
-            }}
-          >
-            Aaron
-          </button>
-          <button
-            onClick={() => setSelectedUser("kristin")}
-            style={{
-              padding: "0.4rem 0.8rem",
-              fontSize: "0.9rem",
-              fontWeight: selectedUser === "kristin" ? "bold" : "normal",
-              backgroundColor: selectedUser === "kristin" ? "var(--secondary-color)" : "transparent",
-              color: "var(--text-color)",
-              border: "2px solid var(--secondary-color)",
-              borderRadius: "0.25rem",
-              cursor: "pointer",
-              transition: "all 0.2s"
-            }}
-          >
-            Kristin
-          </button>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.5rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <h3 style={{ margin: 0, fontSize: "1.1rem" }}>Training Paces</h3>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <button
+              onClick={() => setSelectedUser("aaron")}
+              style={{
+                padding: "0.4rem 0.8rem",
+                fontSize: "0.9rem",
+                fontWeight: selectedUser === "aaron" ? "bold" : "normal",
+                backgroundColor: selectedUser === "aaron" ? "var(--secondary-color)" : "transparent",
+                color: "var(--text-color)",
+                border: "2px solid var(--secondary-color)",
+                borderRadius: "0.25rem",
+                cursor: "pointer",
+                transition: "all 0.2s"
+              }}
+            >
+              Aaron
+            </button>
+            <button
+              onClick={() => setSelectedUser("kristin")}
+              style={{
+                padding: "0.4rem 0.8rem",
+                fontSize: "0.9rem",
+                fontWeight: selectedUser === "kristin" ? "bold" : "normal",
+                backgroundColor: selectedUser === "kristin" ? "var(--secondary-color)" : "transparent",
+                color: "var(--text-color)",
+                border: "2px solid var(--secondary-color)",
+                borderRadius: "0.25rem",
+                cursor: "pointer",
+                transition: "all 0.2s"
+              }}
+            >
+              Kristin
+            </button>
+          </div>
         </div>
+        {lastUpdated && (
+          <div style={{ 
+            fontSize: "0.8rem", 
+            color: "var(--text-color)", 
+            opacity: 0.7,
+            marginLeft: "auto"
+          }}>
+            updated: {new Date(lastUpdated).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+          </div>
+        )}
       </div>
 
       {loading && (
