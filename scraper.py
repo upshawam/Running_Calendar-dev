@@ -1,12 +1,14 @@
 import json
 import os
 import argparse
+import re
+from datetime import datetime
 from playwright.sync_api import sync_playwright
+from bs4 import BeautifulSoup
 
 def auto_login(storage_path, username, password, debug=False):
     """Automatically log in to Runalyze and save storage state."""
     # Force headless mode in CI environments
-    import os
     is_ci = os.getenv('CI') == 'true' or os.getenv('GITHUB_ACTIONS') == 'true'
     if is_ci:
         debug = False
@@ -149,7 +151,6 @@ def auto_login(storage_path, username, password, debug=False):
 def fetch_data(storage_path, user, output_dir="docs/data", debug=False):
     """Fetch training data using saved storage state."""
     # Force headless mode in CI environments
-    import os
     is_ci = os.getenv('CI') == 'true' or os.getenv('GITHUB_ACTIONS') == 'true'
     if is_ci:
         debug = False
@@ -176,37 +177,38 @@ def fetch_data(storage_path, user, output_dir="docs/data", debug=False):
             page.goto("https://runalyze.com/dashboard", wait_until="domcontentloaded")
             page.wait_for_load_state("networkidle", timeout=30000)
 
-            # Wait for the panel to load - try multiple selectors
+            # Find the training paces panel specifically (not other panels on dashboard)
             panel_html = None
             try:
-                page.wait_for_selector(".panel-content", timeout=10000)
-                panel_html = page.query_selector(".panel-content").inner_html()
-                print("Found panel using .panel-content selector")
-            except:
-                print("Could not find .panel-content, trying alternative selectors...")
-                # Try other common selectors
-                for selector in [".panel-body", "[class*='panel']", "main", "[role='main']", ".content"]:
-                    try:
-                        element = page.query_selector(selector)
-                        if element:
-                            panel_html = element.inner_html()
-                            print(f"Found content using selector: {selector}")
-                            break
-                    except:
-                        continue
+                # Look for all panels and find the one with paces data
+                panels = page.query_selector_all(".panel")
+                print(f"Found {len(panels)} panels on page")
+                
+                for i, panel in enumerate(panels):
+                    panel_inner = panel.inner_html()
+                    # Check if this panel contains pace data (look for key pace terms)
+                    if ("<strong>Recovery</strong>" in panel_inner or "Recovery" in panel_inner) and \
+                       ("<strong>Aerobic</strong>" in panel_inner or "Aerobic" in panel_inner):
+                        # Found the paces panel!
+                        content_div = panel.query_selector(".panel-content")
+                        if content_div:
+                            panel_html = content_div.inner_html()
+                        else:
+                            panel_html = panel_inner
+                        print(f"Found paces panel at index {i}")
+                        break
                 
                 if not panel_html:
-                    print("Could not find panel with any selector. Page HTML:")
-                    print(page.content()[:2000])
-                    raise Exception("Could not find training paces panel on page")
-
-            # Debug: show what we found
-            print(f"Panel HTML length: {len(panel_html)}")
-            if "<p>" in panel_html or "Recovery" in panel_html:
-                print("Found <p> tags or pace data in panel")
-            else:
-                print("No <p> tags or pace data found. Panel HTML preview:")
-                print(panel_html[:500])
+                    print("No panel with pace data found. Checking page content...")
+                    page_content = page.content()
+                    if "Recovery" in page_content and "Aerobic" in page_content:
+                        print("Page contains pace data but not in expected structure")
+                    raise Exception("Could not find training paces panel")
+                    
+            except Exception as e:
+                print(f"Error finding paces panel: {e}")
+                print("Could not find training paces panel on page")
+                raise
 
             paces = parse_training_paces_html(panel_html)
 
@@ -218,7 +220,6 @@ def fetch_data(storage_path, user, output_dir="docs/data", debug=False):
             else:
                 history = []
 
-            from datetime import datetime
             history.append({
                 "date": datetime.now().isoformat(),
                 "paces": paces
@@ -271,7 +272,6 @@ def fetch_data(storage_path, user, output_dir="docs/data", debug=False):
                 history = []
 
             if prognosis:  # Only append if we have data
-                from datetime import datetime
                 history.append({
                     "date": datetime.now().isoformat(),
                     "prognosis": prognosis
@@ -326,7 +326,6 @@ def fetch_data(storage_path, user, output_dir="docs/data", debug=False):
                 history = []
 
             if vo2:  # Only append if we have data
-                from datetime import datetime
                 history.append({
                     "date": datetime.now().isoformat(),
                     "vo2": vo2
@@ -344,7 +343,6 @@ def fetch_data(storage_path, user, output_dir="docs/data", debug=False):
 
 def parse_training_paces_html(html_content):
     """Parse training paces from the HTML content of the training paces panel."""
-    from bs4 import BeautifulSoup
     soup = BeautifulSoup(html_content, 'html.parser')
 
     paces = {}
@@ -359,17 +357,18 @@ def parse_training_paces_html(html_content):
         
         if strong and span_right:
             pace_type = strong.get_text(strip=True)
-            pace_range = span_right.get_text(strip=True)
+            # Clean whitespace from pace range
+            pace_range = ' '.join(span_right.get_text().split())
             
             # Extract VO2 percentage from small tag (e.g., "(64 - 75%)")
             vo2_percent = ""
             if small:
                 vo2_text = small.get_text(strip=True)
-                # Extract just the percentage part
-                import re
-                match = re.search(r'(\d+\s*-\s*\d+%)', vo2_text)
+                # Extract just the percentage part and clean it
+                match = re.search(r'(…?-?\d+%|…\s*-\s*\d+%|\d+\s*-\s*\d+%)', vo2_text)
                 if match:
-                    vo2_percent = match.group(1)
+                    # Remove all whitespace from the extracted percentage
+                    vo2_percent = re.sub(r'\s+', '', match.group(0))
             
             paces[pace_type] = {
                 "pace_range": pace_range,
