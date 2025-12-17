@@ -200,6 +200,14 @@ def fetch_data(storage_path, user, output_dir="docs/data", debug=False):
                     print(page.content()[:2000])
                     raise Exception("Could not find training paces panel on page")
 
+            # Debug: show what we found
+            print(f"Panel HTML length: {len(panel_html)}")
+            if "<p>" in panel_html or "Recovery" in panel_html:
+                print("Found <p> tags or pace data in panel")
+            else:
+                print("No <p> tags or pace data found. Panel HTML preview:")
+                print(panel_html[:500])
+
             paces = parse_training_paces_html(panel_html)
 
             # Accumulate history
