@@ -143,13 +143,18 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "" }) => {
             opacity: 0.7,
             marginLeft: "auto"
           }}>
-            updated: {new Date(lastUpdated).toLocaleString('en-US', { 
-              month: 'short', 
-              day: 'numeric', 
-              hour: '2-digit', 
-              minute: '2-digit',
-              timeZone: 'America/Chicago'
-            })}
+            updated: {(() => {
+              const date = new Date(lastUpdated);
+              const formatter = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'America/Chicago',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+              });
+              return formatter.format(date);
+            })()}
           </div>
         )}
       </div>
