@@ -16,8 +16,6 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -27,7 +25,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install playwright beautifulsoup4 requests
+        pip install playwright beautifulsoup4
 
     - name: Install Playwright browsers
       run: playwright install --with-deps
@@ -39,16 +37,10 @@ jobs:
       run: |
         mkdir -p tmp
         if [ -n "$STORAGE_KRISTIN" ]; then
-          echo "Writing storage_kristin.json"
           echo "$STORAGE_KRISTIN" | base64 --decode > tmp/storage_kristin.json
-        else
-          echo "STORAGE_KRISTIN secret not set, will create new"
         fi
         if [ -n "$STORAGE_AARON" ]; then
-          echo "Writing storage_aaron.json"
           echo "$STORAGE_AARON" | base64 --decode > tmp/storage_aaron.json
-        else
-          echo "STORAGE_AARON secret not set, will create new"
         fi
 
     - name: Auto-login Kristin
@@ -56,39 +48,22 @@ jobs:
         USERNAME: ${{ secrets.KRISTIN_RUNALYZE_USERNAME }}
         PASSWORD: ${{ secrets.KRISTIN_RUNALYZE_PASSWORD }}
       run: |
-        if [ -n "$USERNAME" ] && [ -n "$PASSWORD" ]; then
-          python3 scraper.py auto-login --storage tmp/storage_kristin.json --username "$USERNAME" --password "$PASSWORD"
-        else
-          echo "Credentials not set for Kristin"
-        fi
+        [ -n "$USERNAME" ] && [ -n "$PASSWORD" ] && python3 scraper.py auto-login --storage tmp/storage_kristin.json --username "$USERNAME" --password "$PASSWORD"
 
     - name: Auto-login Aaron
       env:
         USERNAME: ${{ secrets.AARON_RUNALYZE_USERNAME }}
         PASSWORD: ${{ secrets.AARON_RUNALYZE_PASSWORD }}
       run: |
-        if [ -n "$USERNAME" ] && [ -n "$PASSWORD" ]; then
-          python3 scraper.py auto-login --storage tmp/storage_aaron.json --username "$USERNAME" --password "$PASSWORD"
-        else
-          echo "Credentials not set for Aaron"
-        fi
+        [ -n "$USERNAME" ] && [ -n "$PASSWORD" ] && python3 scraper.py auto-login --storage tmp/storage_aaron.json --username "$USERNAME" --password "$PASSWORD"
 
-    - name: Run fetch script for each account
-      env:
-        PYTHONUNBUFFERED: 1
+    - name: Fetch training paces
       run: |
         mkdir -p docs/data
-        echo "Fetching paces for kristin..."
         python3 scraper.py fetch --storage tmp/storage_kristin.json --user kristin --output-dir docs/data || exit 1
-        echo "Fetching paces for aaron..."
-        python3 scraper.py fetch --storage tmp/storage_aaron.json   --user aaron   --output-dir docs/data || exit 1
-        echo "Files in docs/data:"
-        ls -la docs/data || true
-        echo "Content of aaron_paces.json:"
-        cat docs/data/aaron_paces.json | head -20 || true
+        python3 scraper.py fetch --storage tmp/storage_aaron.json --user aaron --output-dir docs/data || exit 1
         
-        # Verify we have new entries (file should have more than just the old entry)
-        echo "Verifying paces were updated..."
+        # Verify paces were added
         python3 -c "
         import json
         with open('docs/data/aaron_paces.json') as f:
@@ -96,8 +71,19 @@ jobs:
         if len(data) < 2:
             print('ERROR: No new paces entry was added!')
             exit(1)
-        print(f'SUCCESS: Found {len(data)} entries in aaron_paces.json')
+        print(f'✓ Successfully saved paces with {len(data)} total entries')
         "
+
+    - name: Commit and push changes
+      env:
+        GIT_COMMITTER_NAME: "github-actions[bot]"
+        GIT_COMMITTER_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"
+      run: |
+        git config user.name "${GIT_COMMITTER_NAME}"
+        git config user.email "${GIT_COMMITTER_EMAIL}"
+        git add docs/data || true
+        git commit -m "Update training paces data [automated]" || echo "No changes to commit"
+        git push origin HEAD:master
 
     - name: Commit and push changes
       env:
