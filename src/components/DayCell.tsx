@@ -26,6 +26,11 @@ export const DayCell = ({
   isToday,
   todayRef,
 }: Props) => {
+  if (isToday) {
+    // Debug: log when today cell is detected
+    // eslint-disable-next-line no-console
+    console.log('[DayCell] isToday:', date, 'isToday:', isToday);
+  }
 
   function canSwap(droppedDate: Date) {
     return dayDetails !== undefined && date !== droppedDate;
