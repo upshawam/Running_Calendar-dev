@@ -13,7 +13,7 @@ interface Props {
   selected: boolean;
   hovering: boolean;
   isToday?: boolean;
-  todayRef?: React.RefObject<HTMLDivElement>;
+  todayRef?: ((node: HTMLDivElement | null) => void) | undefined;
 }
 
 export const DayCell = ({
@@ -55,9 +55,9 @@ export const DayCell = ({
     >
       <div
         className={`day-cell${isToday ? " today-highlight" : ""}`}
-        ref={isToday ? (node => {
+        ref={isToday && todayRef ? (node => {
           drop(node);
-          if (todayRef && node) todayRef.current = node;
+          todayRef(node);
         }) : drop}
       >
         {dayDetails && (

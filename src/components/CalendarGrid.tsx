@@ -69,6 +69,10 @@ export const CalendarGrid = ({
 }: Props) => {
   const today = new Date();
   const todayCellRef = React.useRef<HTMLDivElement | null>(null);
+  // Callback ref to set todayCellRef
+  const setTodayCellRef = (node: HTMLDivElement | null) => {
+    todayCellRef.current = node;
+  };
   const [selectedDow, setSelectedDow] = React.useState<dayOfWeek | undefined>(
     undefined,
   );
@@ -116,7 +120,7 @@ export const CalendarGrid = ({
               selected={selectedDow === format(d.date, "EEEE")}
               hovering={hoveringDow === format(d.date, "EEEE")}
               isToday={isToday}
-              todayRef={isToday ? todayCellRef : undefined}
+              todayRef={isToday ? setTodayCellRef : undefined}
             />
           );
         })}
