@@ -1,10 +1,13 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { render } from "../ch/rendering";
 import { Dateline } from "./Dateline";
 import { useDrag, DragSourceMonitor } from "react-dnd";
 import { ItemTypes } from "../ch/ItemTypes";
 import { DragHandle } from "./DragHandle";
 import { DayDetails, Units } from "types/app";
+import { WorkoutLogModal } from "./WorkoutLogModal";
+import { fetchWorkoutLog } from "../lib/workoutLogService";
+import { WorkoutLog } from "../lib/supabaseClient";
 
 interface Props {
   dayDetails: DayDetails;
@@ -13,6 +16,7 @@ interface Props {
   swap: (d1: Date, d2: Date) => void;
   paceData?: any;
   isCurrentWeek?: boolean;
+  userId: 'aaron' | 'kristin';
 }
 
 function renderDesc(
@@ -64,7 +68,25 @@ function matchPaceType(title: string, paceData: any): string | null {
   return null;
 }
 
-export const WorkoutCard = ({ dayDetails, date, units, paceData, isCurrentWeek }: Props) => {
+export const WorkoutCard = ({ dayDetails, date, units, paceData, isCurrentWeek, userId }: Props) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [workoutLog, setWorkoutLog] = useState<WorkoutLog | null>(null);
+
+  // Format date as ISO string for database
+  const dateStr = date.toISOString().split('T')[0];
+
+  // Load workout log data
+  useEffect(() => {
+    if (userId) {
+      fetchWorkoutLog(userId, dateStr).then(setWorkoutLog);
+    }
+  }, [userId, dateStr]);
+
+  // Reload log data after modal saves
+  const handleLogSaved = () => {
+    fetchWorkoutLog(userId, dateStr).then(setWorkoutLog);
+  };
+
   const [{ isDragging }, drag, preview] = useDrag({
     type: ItemTypes.DAY,
     item: { date: date, dayDetails: dayDetails, units: units },
@@ -80,32 +102,92 @@ export const WorkoutCard = ({ dayDetails, date, units, paceData, isCurrentWeek }
   });
 
   const paceInfo = isCurrentWeek ? matchPaceType(dayDetails.title, paceData) : null;
+
+  // Get plan workout title for the modal
+  const [title] = render(dayDetails, dayDetails.sourceUnits, units);
+
+  // Handle click to open modal
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't open modal if clicking the drag handle
+    if ((e.target as HTMLElement).closest('.drag-handle')) {
+      return;
+    }
+    setIsModalOpen(true);
+  };
   
   return (
-    <div ref={preview} className={`workout-card ${isDragging ? "dragging" : ""}`} style={{ display: 'flex', flexDirection: 'column' }}>
-      <Dateline $date={date} />
-      <div className="workout-content" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <div ref={drag}>
-          <DragHandle viewBox="0 0 32 36" />
-        </div>
-        <div style={{ flex: 1 }}>
-          {renderDesc(dayDetails, dayDetails.sourceUnits, units)}
-        </div>
-        {paceInfo && (
-          <div style={{ 
-            textAlign: 'center',
-            fontSize: '0.75rem', 
-            color: '#666', 
-            fontStyle: 'italic',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            paddingTop: '0.25rem',
-            borderTop: '1px solid #eee',
-            marginTop: '0.25rem'
-          }}>{paceInfo}</div>
+    <>
+      <div 
+        ref={preview} 
+        className={`workout-card ${isDragging ? "dragging" : ""} ${workoutLog?.completed ? "completed" : ""}`}
+        style={{ display: 'flex', flexDirection: 'column', cursor: 'pointer' }}
+        onClick={handleCardClick}
+      >
+        <Dateline $date={date} />
+        {workoutLog?.completed && (
+          <div style={{
+            position: 'absolute',
+            top: '0.5rem',
+            right: '0.5rem',
+            fontSize: '1.2rem',
+          }}>✓</div>
         )}
+        <div className="workout-content" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div ref={drag} className="drag-handle">
+            <DragHandle viewBox="0 0 32 36" />
+          </div>
+          <div style={{ flex: 1 }}>
+            {renderDesc(dayDetails, dayDetails.sourceUnits, units)}
+          </div>
+          {paceInfo && (
+            <div style={{ 
+              textAlign: 'center',
+              fontSize: '0.75rem', 
+              color: '#666', 
+              fontStyle: 'italic',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              paddingTop: '0.25rem',
+              borderTop: '1px solid #eee',
+              marginTop: '0.25rem'
+            }}>{paceInfo}</div>
+          )}
+          {workoutLog?.actual_pace && (
+            <div style={{
+              textAlign: 'center',
+              fontSize: '0.75rem',
+              color: '#28a745',
+              fontWeight: 600,
+              marginTop: '0.25rem',
+            }}>
+              Actual: {workoutLog.actual_pace}
+            </div>
+          )}
+          {workoutLog?.notes && (
+            <div style={{
+              fontSize: '0.7rem',
+              color: '#666',
+              fontStyle: 'italic',
+              marginTop: '0.25rem',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}>
+              💬 {workoutLog.notes}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+
+      <WorkoutLogModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        userId={userId}
+        date={dateStr}
+        planWorkout={title}
+        onSave={handleLogSaved}
+      />
+    </>
   );
 };

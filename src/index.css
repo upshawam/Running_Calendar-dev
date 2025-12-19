@@ -424,10 +424,21 @@ svg.drag-handle {
   border-radius: 0.25rem;
   background-color: var(--card-color);
   opacity: 1;
+  position: relative;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.workout-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
 }
 
 .workout-card.dragging {
   opacity: 0.7;
+}
+
+.workout-card.completed {
+  border-left: 3px solid #28a745;
 }
 
 .workout-content {

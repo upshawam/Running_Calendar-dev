@@ -150,6 +150,7 @@ export const CalendarGrid = ({
               todayRef={isToday ? setTodayCellRef : undefined}
               paceData={paceData}
               isCurrentWeek={isCurrentWeek}
+              userId={selectedUser}
             />
           );
         })}

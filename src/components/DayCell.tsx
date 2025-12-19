@@ -16,6 +16,7 @@ interface Props {
   todayRef?: ((node: HTMLDivElement | null) => void) | undefined;
   paceData?: any;
   isCurrentWeek?: boolean;
+  userId: 'aaron' | 'kristin';
 }
 
 export const DayCell = ({
@@ -29,6 +30,7 @@ export const DayCell = ({
   todayRef,
   paceData,
   isCurrentWeek,
+  userId,
 }: Props) => {
   if (isToday) {
     // Debug: log when today cell is detected
@@ -77,6 +79,7 @@ export const DayCell = ({
             swap={swap}
             paceData={paceData}
             isCurrentWeek={isCurrentWeek}
+            userId={userId}
           />
         )}
         {!dayDetails && <BlankCard date={date} />}
