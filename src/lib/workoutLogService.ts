@@ -1,9 +1,8 @@
 import { supabase, WorkoutLog } from './supabaseClient';
 
-/**
- * Fetch workout logs for a specific user
- */
 export async function fetchWorkoutLogs(userId: 'aaron' | 'kristin'): Promise<WorkoutLog[]> {
+  if (!supabase) return [];
+  
   const { data, error } = await supabase
     .from('workout_logs')
     .select('*')
@@ -18,13 +17,12 @@ export async function fetchWorkoutLogs(userId: 'aaron' | 'kristin'): Promise<Wor
   return data || [];
 }
 
-/**
- * Fetch a single workout log by user and date
- */
 export async function fetchWorkoutLog(
   userId: 'aaron' | 'kristin',
   date: string
 ): Promise<WorkoutLog | null> {
+  if (!supabase) return null;
+  
   const { data, error } = await supabase
     .from('workout_logs')
     .select('*')
@@ -33,7 +31,7 @@ export async function fetchWorkoutLog(
     .single();
 
   if (error) {
-    if (error.code !== 'PGRST116') { // PGRST116 = no rows found
+    if (error.code !== 'PGRST116') {
       console.error('Error fetching workout log:', error);
     }
     return null;
@@ -42,10 +40,9 @@ export async function fetchWorkoutLog(
   return data;
 }
 
-/**
- * Create or update a workout log
- */
 export async function upsertWorkoutLog(log: WorkoutLog): Promise<WorkoutLog | null> {
+  if (!supabase) return null;
+  
   const { data, error } = await supabase
     .from('workout_logs')
     .upsert(
@@ -59,7 +56,7 @@ export async function upsertWorkoutLog(log: WorkoutLog): Promise<WorkoutLog | nu
         updated_at: new Date().toISOString(),
       },
       {
-        onConflict: 'user_id,date', // Unique constraint on user_id and date
+        onConflict: 'user_id,date',
       }
     )
     .select()
@@ -73,13 +70,12 @@ export async function upsertWorkoutLog(log: WorkoutLog): Promise<WorkoutLog | nu
   return data;
 }
 
-/**
- * Delete a workout log
- */
 export async function deleteWorkoutLog(
   userId: 'aaron' | 'kristin',
   date: string
 ): Promise<boolean> {
+  if (!supabase) return false;
+  
   const { error } = await supabase
     .from('workout_logs')
     .delete()
