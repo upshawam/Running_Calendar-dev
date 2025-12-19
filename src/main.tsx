@@ -16,7 +16,7 @@ createRoot(document.getElementById("root")!).render(
     <DndProvider options={HTML5toTouch}>
       <QueryParamProvider adapter={WindowHistoryAdapter}>
           <div className="app">
-            <BrowserRouter basename="/Running_Calendar">
+            <BrowserRouter basename={import.meta.env.BASE_URL}>
               <Routes>
                 <Route path="/" element={<Index />} >
                   <Route index path="/" element={<App />}/>
