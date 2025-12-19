@@ -1,5 +1,5 @@
 const AppConfig = {
-  plansPath: "/Running_Calendar/plans/json/",
+  plansPath: import.meta.env.BASE_URL + "plans/json/",
 };
 
 export const Config = AppConfig;

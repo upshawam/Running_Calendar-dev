@@ -28,12 +28,10 @@ export async function fetchWorkoutLog(
     .select('*')
     .eq('user_id', userId)
     .eq('date', date)
-    .single();
+    .maybeSingle();
 
   if (error) {
-    if (error.code !== 'PGRST116') {
-      console.error('Error fetching workout log:', error);
-    }
+    console.error('Error fetching workout log:', error);
     return null;
   }
 
