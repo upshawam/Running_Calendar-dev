@@ -4,3 +4,10 @@ import "@testing-library/jest-dom";
 jest.mock("nanoid", () => { return {
     nanoid : ()=>{}
   } });
+
+// Mock config module to avoid import.meta issues in Jest
+jest.mock("./src/ch/config", () => ({
+  Config: {
+    plansPath: "/plans/json/"
+  }
+}));
