@@ -59,9 +59,13 @@ jobs:
 
     - name: Fetch training paces
       run: |
-        mkdir -p public/data
+        mkdir -p public/data docs/data
         python3 scraper.py fetch --storage tmp/storage_kristin.json --user kristin --output-dir public/data || exit 1
         python3 scraper.py fetch --storage tmp/storage_aaron.json --user aaron --output-dir public/data || exit 1
+        
+        # Copy to docs for GitHub Pages
+        cp public/data/aaron_paces.json docs/data/aaron_paces.json
+        cp public/data/kristin_paces.json docs/data/kristin_paces.json
         
         # Verify paces were added
         python3 -c "
@@ -81,8 +85,8 @@ jobs:
       run: |
         git config user.name "${GIT_COMMITTER_NAME}"
         git config user.email "${GIT_COMMITTER_EMAIL}"
-        git add public/data || true
-        git diff --cached public/data || true
+        git add public/data docs/data || true
+        git diff --cached public/data docs/data || true
         git commit -m "Update training paces data [automated]" || echo "No changes to commit"
         git push origin HEAD:master
 
