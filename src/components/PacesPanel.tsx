@@ -56,39 +56,6 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "", selectedUser, o
     }
   };
 
-  const formatPace = (paceStr: string): string => {
-    // Pace ranges are already formatted (e.g., "8:53/mi - …", "8:17/mi - 9:44/mi")
-    return paceStr;
-  };
-
-  const formatVO2Percent = (vo2Str: string): string => {
-    // VO2 percentages are already formatted (e.g., "Up to 70% vVO2max", "64% - 75% vVO2max")
-    return vo2Str;
-  };
-
-  const getPaceColor = (paceType: string): string => {
-    // Color code different pace types
-    const colors: { [key: string]: string } = {
-      "Recovery": "#95a5a6",
-      "Aerobic": "#3498db",
-      "Long/Medium long": "#27ae60",
-      "Marathon": "#e74c3c",
-      "Lactate threshold": "#f39c12",
-      "VO2max": "#9b59b6",
-      "Tempo": "#e67e22",
-      "Threshold": "#f39c12",
-      "Easy": "#95a5a6"
-    };
-
-    // Try to match pace type with color
-    for (const [key, color] of Object.entries(colors)) {
-      if (paceType.toLowerCase().includes(key.toLowerCase())) {
-        return color;
-      }
-    }
-    return "#34495e"; // Default color
-  };
-
   return (
     <div className={`paces-panel ${className}`} style={{
       backgroundColor: "var(--card-color)",
@@ -206,7 +173,7 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "", selectedUser, o
               let foundKey = Object.keys(pacesData).find(k =>
                 row.synonyms.some(syn => k.toLowerCase().includes(syn))
               );
-              let value = foundKey ? pacesData[foundKey].pace_range : "-";
+              let value = foundKey ? (pacesData as any)[foundKey].pace_range : "-";
               return (
                 <div key={i} className="pace-zone">
                   <span className="pace-zone-label">{row.label}</span>
@@ -239,7 +206,7 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "", selectedUser, o
                   let foundKey = Object.keys(pacesData).find(k =>
                     row.synonyms.some(syn => k.toLowerCase().includes(syn))
                   );
-                  let value = foundKey ? pacesData[foundKey].pace_range : "-";
+                  let value = foundKey ? (pacesData as any)[foundKey].pace_range : "-";
                   return (
                     <tr key={i}>
                       <td className="pace-label" style={{
