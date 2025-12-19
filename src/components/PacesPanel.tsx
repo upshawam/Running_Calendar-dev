@@ -22,6 +22,7 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "", selectedUser, o
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isHidden, setIsHidden] = useState(false);
 
   useEffect(() => {
     loadPacesData(selectedUser);
@@ -55,6 +56,76 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "", selectedUser, o
       setLoading(false);
     }
   };
+
+  if (isHidden) {
+    return (
+      <div className={`paces-panel ${className}`} style={{
+        backgroundColor: "var(--card-color)",
+        border: "3px solid var(--secondary-color)",
+        borderRadius: "0.5rem",
+        padding: "0.5em 1em",
+        margin: "1em 0",
+        position: "sticky",
+        top: "0",
+        zIndex: 100,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "0.75rem"
+      }}>
+        <h3 style={{ margin: 0, fontSize: "1.1rem" }}>Training Paces</h3>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <button
+            onClick={() => onUserChange("aaron")}
+            style={{
+              padding: "0.4rem 0.8rem",
+              fontSize: "0.9rem",
+              fontWeight: selectedUser === "aaron" ? "bold" : "normal",
+              backgroundColor: selectedUser === "aaron" ? "var(--secondary-color)" : "transparent",
+              color: "var(--text-color)",
+              border: "2px solid var(--secondary-color)",
+              borderRadius: "0.25rem",
+              cursor: "pointer",
+              transition: "all 0.2s"
+            }}
+          >
+            Aaron
+          </button>
+          <button
+            onClick={() => onUserChange("kristin")}
+            style={{
+              padding: "0.4rem 0.8rem",
+              fontSize: "0.9rem",
+              fontWeight: selectedUser === "kristin" ? "bold" : "normal",
+              backgroundColor: selectedUser === "kristin" ? "var(--secondary-color)" : "transparent",
+              color: "var(--text-color)",
+              border: "2px solid var(--secondary-color)",
+              borderRadius: "0.25rem",
+              cursor: "pointer",
+              transition: "all 0.2s"
+            }}
+          >
+            Kristin
+          </button>
+        </div>
+        <button
+          onClick={() => setIsHidden(false)}
+          style={{
+            padding: "0.4rem 0.8rem",
+            fontSize: "0.9rem",
+            backgroundColor: "transparent",
+            color: "var(--text-color)",
+            border: "2px solid var(--secondary-color)",
+            borderRadius: "0.25rem",
+            cursor: "pointer",
+            transition: "all 0.2s"
+          }}
+        >
+          Show
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className={`paces-panel ${className}`} style={{
@@ -105,14 +176,32 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "", selectedUser, o
             </button>
           </div>
         </div>
-        {lastUpdated && (
-          <div style={{ 
-            fontSize: "0.8rem", 
-            color: "var(--text-color)", 
-            opacity: 0.7,
+        <button
+          onClick={() => setIsHidden(true)}
+          style={{
+            padding: "0.4rem 0.8rem",
+            fontSize: "0.9rem",
+            backgroundColor: "transparent",
+            color: "var(--text-color)",
+            border: "2px solid var(--secondary-color)",
+            borderRadius: "0.25rem",
+            cursor: "pointer",
+            transition: "all 0.2s",
             marginLeft: "auto"
-          }}>
-            updated: {(() => {
+          }}
+        >
+          Hide
+        </button>
+      </div>
+      
+      {lastUpdated && (
+        <div style={{ 
+          fontSize: "0.8rem", 
+          color: "var(--text-color)", 
+          opacity: 0.7,
+          marginBottom: "0.5rem"
+        }}>
+          updated: {(() => {
               const date = new Date(lastUpdated);
               const now = new Date();
               const diffMs = now.getTime() - date.getTime();
@@ -128,8 +217,17 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "", selectedUser, o
                 return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
               }
             })()}
-          </div>
-        )}
+        </div>
+      )}
+      
+      <div style={{
+        fontSize: "0.85rem",
+        color: "var(--text-color)",
+        opacity: 0.8,
+        fontStyle: "italic",
+        marginBottom: "0.5rem"
+      }}>
+        *Paces are added to the current week
       </div>
 
       {loading && (
