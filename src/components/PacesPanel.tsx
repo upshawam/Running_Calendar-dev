@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import "./PacesPanel.css";
 
 interface PaceData {
   pace_range: string;
@@ -184,56 +185,94 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "" }) => {
       )}
 
       {pacesData && !loading && (
-        <div className="paces-grid" style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(6, 1fr)",
-          gap: "0.75rem"
-        }}>
-          {Object.entries(pacesData).map(([paceType, paceInfo]) => (
-            <div
-              key={paceType}
-              className="pace-item"
-              style={{
-                backgroundColor: "var(--secondary-color)",
-                borderRadius: "0.25rem",
-                padding: "0.5rem",
-                textAlign: "center"
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "0.85rem",
-                  fontWeight: "bold",
-                  color: getPaceColor(paceType),
-                  marginBottom: "0.4rem"
-                }}
-              >
-                {paceType}
-              </div>
-              <div
-                style={{
-                  fontSize: "1rem",
-                  fontWeight: "900",
-                  color: "var(--text-color)",
-                  marginBottom: "0.2rem"
-                }}
-              >
-                {formatPace(paceInfo.pace_range)}
-              </div>
-              {paceInfo.vo2_percent && (
-                <div
-                  style={{
-                    fontSize: "0.75rem",
-                    color: "var(--text-color)",
-                    opacity: 0.8
-                  }}
-                >
-                  {formatVO2Percent(paceInfo.vo2_percent)}
+        <>
+          {/* Desktop: Horizontal row */}
+          <div className="paces-table-horizontal" style={{
+            background: "var(--secondary-color)",
+            borderRadius: "0.5rem",
+            fontFamily: "'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
+            fontSize: "1em",
+            margin: 0
+          }}>
+            {[
+              { label: "Recovery", synonyms: ["recovery"] },
+              { label: "Gen-aerobic", synonyms: ["gen-aerobic", "general aerobic", "aerobic"] },
+              { label: "Long/Medium", synonyms: ["long/medium", "long/medium long", "long run", "medium long"] },
+              { label: "Marathon", synonyms: ["marathon"] },
+              { label: "LT", synonyms: ["lt", "lactate threshold", "threshold"] },
+              { label: "VO2max", synonyms: ["vo2max", "vo2 max"] },
+            ].map((row, i) => {
+              let foundKey = Object.keys(pacesData).find(k =>
+                row.synonyms.some(syn => k.toLowerCase().includes(syn))
+              );
+              let value = foundKey ? pacesData[foundKey].pace_range : "-";
+              return (
+                <div key={i} className="pace-zone">
+                  <span className="pace-zone-label">{row.label}</span>
+                  <span className="pace-zone-value">{value || "-"}</span>
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
+              );
+            })}
+          </div>
+
+          {/* Mobile: Vertical table */}
+          <div className="paces-table-vertical" style={{
+            background: "var(--secondary-color)",
+            borderRadius: "0.5rem",
+            padding: "1em",
+            fontFamily: "'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
+            fontSize: "1em",
+            overflowX: "auto",
+            margin: 0
+          }}>
+            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
+              <tbody>
+                {[
+                  { label: "Recovery", synonyms: ["recovery"] },
+                  { label: "Gen-aerobic", synonyms: ["gen-aerobic", "general aerobic", "aerobic"] },
+                  { label: "Long/Medium", synonyms: ["long/medium", "long/medium long", "long run", "medium long"] },
+                  { label: "Marathon", synonyms: ["marathon"] },
+                  { label: "LT", synonyms: ["lt", "lactate threshold", "threshold"] },
+                  { label: "VO2max", synonyms: ["vo2max", "vo2 max"] },
+                ].map((row, i) => {
+                  let foundKey = Object.keys(pacesData).find(k =>
+                    row.synonyms.some(syn => k.toLowerCase().includes(syn))
+                  );
+                  let value = foundKey ? pacesData[foundKey].pace_range : "-";
+                  return (
+                    <tr key={i}>
+                      <td className="pace-label" style={{
+                        paddingRight: '1em',
+                        fontWeight: 500,
+                        textAlign: 'right',
+                        borderRight: '2px solid #b3b3b3',
+                        minWidth: '7em',
+                        verticalAlign: 'middle',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        maxWidth: '10em',
+                      }}>{row.label}</td>
+                      <td className="pace-value" style={{
+                        paddingLeft: '1em',
+                        paddingRight: '0.5em',
+                        textAlign: 'left',
+                        fontVariantNumeric: 'tabular-nums',
+                        fontWeight: 600,
+                        minWidth: '12em',
+                        verticalAlign: 'middle',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        maxWidth: '16em',
+                      }}>{value || "-"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {!pacesData && !loading && !error && (
