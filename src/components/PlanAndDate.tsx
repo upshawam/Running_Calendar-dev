@@ -3,6 +3,7 @@ import PlanPicker from "./PlanPicker";
 import { PlanSummary, Units } from "types/app";
 import { WeekStartsOn, WeekStartsOnValues } from "../ch/datecalc";
 import UnitsButtons from "./UnitsButtons";
+import "./PlanAndDate.css";
 
 interface Props {
   availablePlans: PlanSummary[];
@@ -34,9 +35,9 @@ const PlanAndDate = ({
         selectedPlan={selectedPlan}
         planChangeHandler={selectedPlanChangeHandler}
       />
-      <div className="controls-row" style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '0.5rem' }}>
+      <div className="controls-row">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <h3 style={{ margin: 0 }}>Week starts on</h3>
+          <h3 style={{ margin: 0, whiteSpace: 'nowrap' }}>Week starts on</h3>
           <select className="select" value={weekStartsOn} onChange={(event) => {
             const newValue = Number(event.target.value) as WeekStartsOn;
             weekStartsOnChangeHandler(newValue);
@@ -53,7 +54,7 @@ const PlanAndDate = ({
           </select>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <h3 style={{ margin: 0 }}>ending on</h3>
+          <h3 style={{ margin: 0, whiteSpace: 'nowrap' }}>ending on</h3>
           <DateControl
             selectedDate={selectedDate}
             onDateChanged={dateChangeHandler}

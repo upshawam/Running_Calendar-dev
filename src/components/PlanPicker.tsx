@@ -1,5 +1,6 @@
 import React from "react";
 import { PlanSummary } from "types/app";
+import "./PlanAndDate.css";
 
 interface Props {
   availablePlans: PlanSummary[];
@@ -64,7 +65,7 @@ const PlanPicker = ({
   ];
 
   return (
-    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+    <div className="plan-picker-container">
       {categories.map(category => {
         const categoryPlans = availablePlans.filter(p => category.types.includes(p.type));
         const groupedPlans = categoryPlans.reduce((groups, plan) => {
