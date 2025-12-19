@@ -58,7 +58,7 @@ jobs:
         [ -n "$USERNAME" ] && [ -n "$PASSWORD" ] && python3 scraper.py auto-login --storage tmp/storage_aaron.json --username "$USERNAME" --password "$PASSWORD"
 
     - name: Fetch training paces
-        run: |
+      run: |
         mkdir -p public/data
         python3 scraper.py fetch --storage tmp/storage_kristin.json --user kristin --output-dir public/data || exit 1
         python3 scraper.py fetch --storage tmp/storage_aaron.json --user aaron --output-dir public/data || exit 1
