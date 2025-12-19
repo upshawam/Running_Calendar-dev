@@ -19,7 +19,6 @@ function renderDesc(
   dayDetails: DayDetails,
   from: Units,
   to: Units,
-  paceInfo?: string | null,
 ): React.ReactElement {
   let [title, desc] = render(dayDetails, from, to);
   // Only render the description if it differs from the title
@@ -30,11 +29,6 @@ function renderDesc(
       <p>
         <span className="workout-title">{title}</span>
       </p>
-      {paceInfo && (
-        <p>
-          <span className="workout-pace" style={{ fontSize: '0.85rem', color: '#666', fontStyle: 'italic' }}>{paceInfo}</span>
-        </p>
-      )}
       {desc && 
         <p>
           <span className="workout-description">{desc}</span>
@@ -88,13 +82,29 @@ export const WorkoutCard = ({ dayDetails, date, units, paceData, isCurrentWeek }
   const paceInfo = isCurrentWeek ? matchPaceType(dayDetails.title, paceData) : null;
   
   return (
-    <div ref={preview} className={`workout-card ${isDragging ? "dragging" : ""}`}>
+    <div ref={preview} className={`workout-card ${isDragging ? "dragging" : ""}`} style={{ display: 'flex', flexDirection: 'column' }}>
       <Dateline $date={date} />
-      <div className="workout-content">
+      <div className="workout-content" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <div ref={drag}>
           <DragHandle viewBox="0 0 32 36" />
         </div>
-        {renderDesc(dayDetails, dayDetails.sourceUnits, units, paceInfo)}
+        <div style={{ flex: 1 }}>
+          {renderDesc(dayDetails, dayDetails.sourceUnits, units)}
+        </div>
+        {paceInfo && (
+          <div style={{ 
+            textAlign: 'center',
+            fontSize: '0.75rem', 
+            color: '#666', 
+            fontStyle: 'italic',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            paddingTop: '0.25rem',
+            borderTop: '1px solid #eee',
+            marginTop: '0.25rem'
+          }}>{paceInfo}</div>
+        )}
       </div>
     </div>
   );
