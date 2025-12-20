@@ -21,6 +21,7 @@ export const WorkoutLogModal: React.FC<WorkoutLogModalProps> = ({
   onSave,
 }) => {
   const [completed, setCompleted] = useState(false);
+  const [actualDistance, setActualDistance] = useState('');
   const [actualPace, setActualPace] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
@@ -34,11 +35,13 @@ export const WorkoutLogModal: React.FC<WorkoutLogModalProps> = ({
         .then((log) => {
           if (log) {
             setCompleted(log.completed);
+            setActualDistance(log.actual_distance || '');
             setActualPace(log.actual_pace || '');
             setNotes(log.notes || '');
           } else {
             // Reset to defaults if no log exists
             setCompleted(false);
+            setActualDistance('');
             setActualPace('');
             setNotes('');
           }
@@ -55,6 +58,7 @@ export const WorkoutLogModal: React.FC<WorkoutLogModalProps> = ({
       date,
       plan_workout: planWorkout,
       completed,
+      actual_distance: actualDistance.trim() || undefined,
       actual_pace: actualPace.trim() || undefined,
       notes: notes.trim() || undefined,
     };
@@ -105,6 +109,17 @@ export const WorkoutLogModal: React.FC<WorkoutLogModalProps> = ({
                 />
                 {' '}Mark as completed
               </label>
+            </div>
+
+            <div className="modal-field">
+              <label htmlFor="actual-distance">Actual Distance</label>
+              <input
+                id="actual-distance"
+                type="text"
+                placeholder="e.g., 6.2 mi or 10 km"
+                value={actualDistance}
+                onChange={(e) => setActualDistance(e.target.value)}
+              />
             </div>
 
             <div className="modal-field">

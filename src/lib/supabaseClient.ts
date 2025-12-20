@@ -14,6 +14,7 @@ export interface WorkoutLog {
   date: string;
   plan_workout: string;
   completed: boolean;
+  actual_distance?: string;
   actual_pace?: string;
   notes?: string;
   created_at?: string;

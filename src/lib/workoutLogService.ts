@@ -49,6 +49,7 @@ export async function upsertWorkoutLog(log: WorkoutLog): Promise<WorkoutLog | nu
         date: log.date,
         plan_workout: log.plan_workout,
         completed: log.completed,
+        actual_distance: log.actual_distance || null,
         actual_pace: log.actual_pace || null,
         notes: log.notes || null,
         updated_at: new Date().toISOString(),

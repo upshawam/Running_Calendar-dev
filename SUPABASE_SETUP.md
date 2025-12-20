@@ -43,6 +43,7 @@ CREATE TABLE workout_logs (
   date DATE NOT NULL,
   plan_workout TEXT NOT NULL,
   completed BOOLEAN NOT NULL DEFAULT false,
+  actual_distance TEXT,
   actual_pace TEXT,
   notes TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
