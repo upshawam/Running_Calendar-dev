@@ -11,6 +11,7 @@ import PlanAndDate from "./components/PlanAndDate";
 import UndoButton from "./components/UndoButton";
 import PacesPanel from "./components/PacesPanel";
 import history from "./defy/history";
+import { supabaseConfigured } from "./lib/supabaseClient";
 import {
   useQueryParams,
   StringParam,
@@ -156,6 +157,21 @@ const App = () => {
 
   return (
     <>
+      {!supabaseConfigured && (
+        <div
+          style={{
+            background: "#fff3cd",
+            color: "#664d03",
+            border: "1px solid #ffeeba",
+            padding: "0.75rem 1rem",
+            margin: "0.5rem",
+            borderRadius: "6px",
+            fontSize: "0.9rem",
+          }}
+        >
+          Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your env (e.g., .env.local) and restart the dev server.
+        </div>
+      )}
       <PlanAndDate
         availablePlans={repo.available}
         selectedPlan={selectedPlan}
