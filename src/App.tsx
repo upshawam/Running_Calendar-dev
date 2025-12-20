@@ -46,6 +46,7 @@ const App = () => {
       : addWeeks(endOfWeek(new Date(), { weekStartsOn: weekStartsOn }), 20),
   );
   var [selectedUser, setSelectedUser] = useState<"aaron" | "kristin">("aaron");
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   useMountEffect(() => {
     initialLoad(selectedPlan, planEndDate, selectedUnits, weekStartsOn);
@@ -182,17 +183,107 @@ const App = () => {
         weekStartsOnChangeHandler={onWeekStartsOnChanged}
         selectedUnits={selectedUnits}
         unitsChangeHandler={onSelectedUnitsChanged}
+        hideControls={true}
       />
-      <PlanDetailsCard racePlan={racePlan} />
       <PacesPanel selectedUser={selectedUser} onUserChange={setSelectedUser} />
-      <div className="second-toolbar">
-        <button className="app-button" onClick={downloadIcalHandler}>Download iCal</button>
-        <button className="app-button" onClick={downloadCsvHandler}>Download CSV</button>
-        <UndoButton
-          disabled={undoHistory.length <= 1}
-          undoHandler={undoHandler}
-        />
-      </div>
+      
+      <button
+        onClick={() => setShowAdvanced(!showAdvanced)}
+        style={{
+          margin: "0.5rem",
+          padding: "0.5rem 1rem",
+          backgroundColor: showAdvanced ? "var(--secondary-color)" : "transparent",
+          color: "var(--text-color)",
+          border: "2px solid var(--secondary-color)",
+          borderRadius: "0.25rem",
+          cursor: "pointer",
+          fontSize: "0.9rem",
+          fontWeight: "bold",
+          transition: "all 0.2s"
+        }}
+      >
+        {showAdvanced ? "Hide Advanced" : "Show Advanced"}
+      </button>
+
+      {showAdvanced && (
+        <>
+          <div className="controls-row">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <h3 style={{ margin: 0, whiteSpace: 'nowrap' }}>Week starts on</h3>
+              <select className="select" value={weekStartsOn} onChange={(event) => {
+                const newValue = Number(event.target.value) as any;
+                onWeekStartsOnChanged(newValue);
+              }}>
+                <option key="monday" value={0}>Monday</option>
+                <option key="sunday" value={1}>Sunday</option>
+                <option key="saturday" value={6}>Saturday</option>
+              </select>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <h3 style={{ margin: 0, whiteSpace: 'nowrap' }}>ending on</h3>
+              <input
+                type="date"
+                value={planEndDate.toISOString().split('T')[0]}
+                onChange={(e) => {
+                  const date = new Date(e.target.value);
+                  onSelectedEndDateChange(date);
+                }}
+                style={{
+                  padding: '0.4rem 0.6rem',
+                  fontSize: 'inherit',
+                  fontFamily: 'inherit',
+                  border: '1px solid var(--secondary-color)',
+                  borderRadius: '0.25rem',
+                  backgroundColor: 'var(--card-color)',
+                  color: 'var(--text-color)',
+                }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, whiteSpace: 'nowrap' }}>Units:</h3>
+              <button
+                onClick={() => onSelectedUnitsChanged('mi')}
+                style={{
+                  padding: '0.4rem 0.8rem',
+                  backgroundColor: selectedUnits === 'mi' ? 'var(--secondary-color)' : 'transparent',
+                  color: 'var(--text-color)',
+                  border: '2px solid var(--secondary-color)',
+                  borderRadius: '0.25rem',
+                  cursor: 'pointer',
+                  fontWeight: selectedUnits === 'mi' ? 'bold' : 'normal',
+                  transition: 'all 0.2s'
+                }}
+              >
+                mi
+              </button>
+              <button
+                onClick={() => onSelectedUnitsChanged('km')}
+                style={{
+                  padding: '0.4rem 0.8rem',
+                  backgroundColor: selectedUnits === 'km' ? 'var(--secondary-color)' : 'transparent',
+                  color: 'var(--text-color)',
+                  border: '2px solid var(--secondary-color)',
+                  borderRadius: '0.25rem',
+                  cursor: 'pointer',
+                  fontWeight: selectedUnits === 'km' ? 'bold' : 'normal',
+                  transition: 'all 0.2s'
+                }}
+              >
+                km
+              </button>
+            </div>
+          </div>
+          <PlanDetailsCard racePlan={racePlan} />
+          <div className="second-toolbar">
+            <button className="app-button" onClick={downloadIcalHandler}>Download iCal</button>
+            <button className="app-button" onClick={downloadCsvHandler}>Download CSV</button>
+            <UndoButton
+              disabled={undoHistory.length <= 1}
+              undoHandler={undoHandler}
+            />
+          </div>
+        </>
+      )}
       <div className="main-ui">
         {racePlan && (
           <CalendarGrid

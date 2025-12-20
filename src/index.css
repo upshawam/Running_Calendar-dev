@@ -140,12 +140,14 @@ a:active {
 }
 
 .toolbar {
-  display: grid;
-  grid-template-columns: 10% auto 10%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   margin: 5px;
   h1 {
     display: inline;
     margin: 0 0.4em;
+    white-space: nowrap;
   }
 }
 
@@ -563,6 +565,8 @@ svg.drag-handle {
 .main-ui {
   margin-top: 2em;
   padding: 5px;
+  display: flex;
+  justify-content: center;
 }
 
 .footer {
