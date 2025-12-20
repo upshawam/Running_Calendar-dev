@@ -33,7 +33,9 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "", selectedUser, o
     setError(null);
 
     try {
-      const response = await fetch(`${import.meta.env.BASE_URL}data/${user}_paces.json`);
+      // Add cache-busting query param to ensure fresh data
+      const cacheBuster = new Date().getTime();
+      const response = await fetch(`${import.meta.env.BASE_URL}data/${user}_paces.json?v=${cacheBuster}`);
       if (!response.ok) {
         throw new Error(`Failed to load paces for ${user}`);
       }
