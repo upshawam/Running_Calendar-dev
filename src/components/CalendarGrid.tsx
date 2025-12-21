@@ -77,11 +77,14 @@ export const CalendarGrid = ({
   React.useEffect(() => {
     async function loadPaces() {
       try {
-        const response = await fetch(`${import.meta.env.BASE_URL}data/${selectedUser}_paces.json`);
+        // Add cache-busting to ensure fresh data
+        const cacheBuster = new Date().getTime();
+        const response = await fetch(`${import.meta.env.BASE_URL}data/${selectedUser}_paces.json?v=${cacheBuster}`);
         if (response.ok) {
           const history = await response.json();
           if (history.length > 0) {
-            setPaceData(history[0].paces);
+            // Use the LATEST entry (last in array), not the first
+            setPaceData(history[history.length - 1].paces);
           }
         }
       } catch (e) {

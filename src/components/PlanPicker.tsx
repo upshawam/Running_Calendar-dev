@@ -1,4 +1,5 @@
 import React from "react";
+import { useState, useRef, useEffect } from "react";
 import { PlanSummary } from "types/app";
 import "./PlanAndDate.css";
 
@@ -13,6 +14,11 @@ const PlanPicker = ({
   selectedPlan,
   planChangeHandler,
 }: Props) => {
+  const [openDropdowns, setOpenDropdowns] = useState<{ [key: string]: boolean }>({});
+  const [menuPositions, setMenuPositions] = useState<{ [key: string]: { top: number; left: number } }>({});
+  const dropdownRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const triggerRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
+
   const getDistance = (type: string): number => {
     switch (type) {
       case "Base": return 0;
@@ -28,46 +34,82 @@ const PlanPicker = ({
 
   const getMileage = (name: string): number => {
     const lowerName = name.toLowerCase();
-    if (lowerName.includes('more than 85')) return 100;
-    if (lowerName.includes('up to 55')) return 55;
+    if (lowerName.includes("more than 85")) return 100;
+    if (lowerName.includes("up to 55")) return 55;
     const match = name.match(/(\d+)\s*(?:to\s*(\d+))?\s*miles?/i);
     if (match) {
       return parseInt(match[2] || match[1]);
     }
-    // For plans without mileage, assign based on keywords
-    if (lowerName.includes('novice') || lowerName.includes('beginner') || lowerName.includes('couch')) {
-      return 10; // Low mileage
+    if (lowerName.includes("novice") || lowerName.includes("beginner") || lowerName.includes("couch")) {
+      return 10;
     }
-    if (lowerName.includes('intermediate')) {
+    if (lowerName.includes("intermediate")) {
       return 30;
     }
-    if (lowerName.includes('advanced')) {
+    if (lowerName.includes("advanced")) {
       return 50;
     }
-    return 20; // Default
+    return 20;
   };
 
-  const handleChange = (event: React.ChangeEvent<{ value: unknown }>) => {
-    const newSelection = availablePlans.find(
-      (p) => p.id === (event.target.value as string),
-    );
-    if (newSelection) {
-      planChangeHandler(newSelection);
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      let isInside = false;
+      Object.values(dropdownRefs.current).forEach((ref) => {
+        if (ref && ref.contains(target)) {
+          isInside = true;
+        }
+      });
+      if (!isInside) {
+        setOpenDropdowns({});
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleCustomSelect = (plan: PlanSummary, categoryLabel: string) => {
+    planChangeHandler(plan);
+    setOpenDropdowns({ ...openDropdowns, [categoryLabel]: false });
+  };
+
+  const toggleDropdown = (categoryLabel: string) => {
+    // Ensure only one dropdown is open at a time
+    const isOpen = !!openDropdowns[categoryLabel];
+    
+    if (!isOpen) {
+      // Opening: calculate position
+      const trigger = triggerRefs.current[categoryLabel];
+      if (trigger) {
+        const rect = trigger.getBoundingClientRect();
+        setMenuPositions({
+          [categoryLabel]: {
+            top: rect.bottom + window.scrollY,
+            left: rect.left + window.scrollX,
+          }
+        });
+      }
+      setOpenDropdowns({ [categoryLabel]: true });
     } else {
-      throw new Error("Invalid selection: " + event.target.value);
+      // Closing
+      setOpenDropdowns({});
     }
   };
 
   const categories = [
     { label: "5K/10K Plans", types: ["5K", "10K", "15K/10M", "Base", "Multiple Distances"] },
     { label: "Half Marathon Plans", types: ["Half Marathon"] },
-    { label: "Marathon Plans", types: ["Marathon"] }
+    { label: "Marathon Plans", types: ["Marathon"] },
   ];
 
   return (
     <div className="plan-picker-container">
-      {categories.map(category => {
-        const categoryPlans = availablePlans.filter(p => category.types.includes(p.type));
+      {categories.map((category) => {
+        const categoryPlans = availablePlans
+          .filter((p) => category.types.includes(p.type))
+          .filter((p) => p.id !== "none");
         const groupedPlans = categoryPlans.reduce((groups, plan) => {
           const groupKey = plan.subcategory ? `${plan.coach} - ${plan.subcategory}` : plan.coach;
           if (!groups[groupKey]) groups[groupKey] = [];
@@ -75,47 +117,71 @@ const PlanPicker = ({
           return groups;
         }, {} as Record<string, PlanSummary[]>);
 
-        const planOptions = Object.keys(groupedPlans)
-          .sort((a, b) => {
-            const minDistA = Math.min(...groupedPlans[a].map(p => getDistance(p.type)));
-            const minDistB = Math.min(...groupedPlans[b].map(p => getDistance(p.type)));
-            return minDistA - minDistB;
-          })
-          .map(group => (
-            <optgroup key={group} label={group}>
-              {groupedPlans[group].sort((a, b) => {
-                const mileageA = getMileage(a.name);
-                const mileageB = getMileage(b.name);
-                if (mileageA !== mileageB) return mileageA - mileageB;
-                const distA = getDistance(a.type);
-                const distB = getDistance(b.type);
-                if (distA !== distB) return distA - distB;
-                return a.name.localeCompare(b.name);
-              }).map(plan => (
-                <option key={plan.id} value={plan.id}>
-                  {plan.name}
-                </option>
-              ))}
-            </optgroup>
-          ));
+        const isOpen = openDropdowns[category.label] || false;
+        const selectedInCategory = categoryPlans.find((p) => p.id === selectedPlan.id);
+        const displayText = selectedInCategory ? selectedInCategory.name : category.label;
 
         return (
-          <select
+          <div
             key={category.label}
-            className="select"
-            style={{ flex: '1', minWidth: '120px' }}
-            value={
-              selectedPlan.id === "none"
-                ? ""
-                : categoryPlans.some(p => p.id === selectedPlan.id)
-                ? selectedPlan.id
-                : ""
-            }
-            onChange={handleChange}
+            className="custom-dropdown"
+            ref={(el) => {
+              if (el) dropdownRefs.current[category.label] = el;
+            }}
           >
-            <option value="">{category.label}</option>
-            {planOptions}
-          </select>
+            <button
+              ref={(el) => {
+                if (el) triggerRefs.current[category.label] = el;
+              }}
+              className="dropdown-trigger"
+              onClick={() => toggleDropdown(category.label)}
+              aria-expanded={isOpen}
+            >
+              <span className="dropdown-text">{displayText}</span>
+              <span className={`dropdown-arrow ${isOpen ? "open" : ""}`}>▼</span>
+            </button>
+
+            {isOpen && (
+              <div 
+                className="dropdown-menu"
+                style={{
+                  top: menuPositions[category.label]?.top || 0,
+                  left: menuPositions[category.label]?.left || 0,
+                } as React.CSSProperties}
+              >
+                {Object.keys(groupedPlans)
+                  .sort((a, b) => {
+                    const minDistA = Math.min(...groupedPlans[a].map((p) => getDistance(p.type)));
+                    const minDistB = Math.min(...groupedPlans[b].map((p) => getDistance(p.type)));
+                    return minDistA - minDistB;
+                  })
+                  .map((group) => (
+                    <div key={group} className="dropdown-group">
+                      <div className="group-header">{group}</div>
+                      {groupedPlans[group]
+                        .sort((a, b) => {
+                          const mileageA = getMileage(a.name);
+                          const mileageB = getMileage(b.name);
+                          if (mileageA !== mileageB) return mileageA - mileageB;
+                          const distA = getDistance(a.type);
+                          const distB = getDistance(b.type);
+                          if (distA !== distB) return distA - distB;
+                          return a.name.localeCompare(b.name);
+                        })
+                        .map((plan) => (
+                          <button
+                            key={plan.id}
+                            className={`dropdown-option ${selectedPlan.id === plan.id ? "selected" : ""}`}
+                            onClick={() => handleCustomSelect(plan, category.label)}
+                          >
+                            {plan.name}
+                          </button>
+                        ))}
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
         );
       })}
     </div>

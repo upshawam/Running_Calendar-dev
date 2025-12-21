@@ -6,7 +6,7 @@ export default defineConfig({
   base: "/Running_Calendar-dev/",
   server: {
     port: 5173,
-    strictPort: false, // Will try next port if 5173 is busy
+    strictPort: true, // Always use port 5173, error if busy
   },
   build: {
     outDir: 'docs',

@@ -15,6 +15,7 @@ interface Props {
   weekStartsOnChangeHandler: (v: WeekStartsOn) => void;
   selectedUnits: Units;
   unitsChangeHandler: (u: Units) => void;
+  hideControls?: boolean;
 }
 
 const PlanAndDate = ({
@@ -27,6 +28,7 @@ const PlanAndDate = ({
   weekStartsOnChangeHandler,
   selectedUnits,
   unitsChangeHandler,
+  hideControls = false,
 }: Props) => {
   return (
     <div className="plan-and-date">
@@ -35,37 +37,39 @@ const PlanAndDate = ({
         selectedPlan={selectedPlan}
         planChangeHandler={selectedPlanChangeHandler}
       />
-      <div className="controls-row">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <h3 style={{ margin: 0, whiteSpace: 'nowrap' }}>Week starts on</h3>
-          <select className="select" value={weekStartsOn} onChange={(event) => {
-            const newValue = Number(event.target.value) as WeekStartsOn;
-            weekStartsOnChangeHandler(newValue);
-          }}>
-            <option key="monday" value={WeekStartsOnValues.Monday}>
-              Monday
-            </option>
-            <option key="sunday" value={WeekStartsOnValues.Sunday}>
-              Sunday
-            </option>
-            <option key="saturday" value={WeekStartsOnValues.Saturday}>
-              Saturday
-            </option>
-          </select>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <h3 style={{ margin: 0, whiteSpace: 'nowrap' }}>ending on</h3>
-          <DateControl
-            selectedDate={selectedDate}
-            onDateChanged={dateChangeHandler}
-            weekStartsOn={weekStartsOn}
+      {!hideControls && (
+        <div className="controls-row">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <h3 style={{ margin: 0, whiteSpace: 'nowrap' }}>Week starts on</h3>
+            <select className="select" value={weekStartsOn} onChange={(event) => {
+              const newValue = Number(event.target.value) as WeekStartsOn;
+              weekStartsOnChangeHandler(newValue);
+            }}>
+              <option key="monday" value={WeekStartsOnValues.Monday}>
+                Monday
+              </option>
+              <option key="sunday" value={WeekStartsOnValues.Sunday}>
+                Sunday
+              </option>
+              <option key="saturday" value={WeekStartsOnValues.Saturday}>
+                Saturday
+              </option>
+            </select>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <h3 style={{ margin: 0, whiteSpace: 'nowrap' }}>ending on</h3>
+            <DateControl
+              selectedDate={selectedDate}
+              onDateChanged={dateChangeHandler}
+              weekStartsOn={weekStartsOn}
+            />
+          </div>
+          <UnitsButtons
+            units={selectedUnits}
+            unitsChangeHandler={unitsChangeHandler}
           />
         </div>
-        <UnitsButtons
-          units={selectedUnits}
-          unitsChangeHandler={unitsChangeHandler}
-        />
-      </div>
+      )}
     </div>
   );
 };

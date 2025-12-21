@@ -33,7 +33,9 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "", selectedUser, o
     setError(null);
 
     try {
-      const response = await fetch(`${import.meta.env.BASE_URL}data/${user}_paces.json`);
+      // Add cache-busting query param to ensure fresh data
+      const cacheBuster = new Date().getTime();
+      const response = await fetch(`${import.meta.env.BASE_URL}data/${user}_paces.json?v=${cacheBuster}`);
       if (!response.ok) {
         throw new Error(`Failed to load paces for ${user}`);
       }
@@ -202,7 +204,9 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "", selectedUser, o
           marginBottom: "0.5rem"
         }}>
           updated: {(() => {
-              const date = new Date(lastUpdated);
+              // Parse as UTC by appending 'Z' if not present
+              const utcTimestamp = lastUpdated.endsWith('Z') ? lastUpdated : lastUpdated + 'Z';
+              const date = new Date(utcTimestamp);
               const now = new Date();
               const diffMs = now.getTime() - date.getTime();
               const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
