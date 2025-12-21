@@ -25,7 +25,7 @@ import { Units, PlanSummary, dayOfWeek } from "types/app";
 import { getLocaleUnits } from "./ch/localize";
 
 const App = () => {
-  const [{ u, p, d, s }, setq] = useQueryParams({
+  const [{ u, p, d }, setq] = useQueryParams({
     u: StringParam,
     p: StringParam,
     d: DateParam,
@@ -37,9 +37,8 @@ const App = () => {
   var [selectedPlan, setSelectedPlan] = useState(repo.find(p || ""));
   var [racePlan, setRacePlan] = useState<RacePlan | undefined>(undefined);
   var [undoHistory, setUndoHistory] = useState([] as RacePlan[]);
-  var [weekStartsOn, setWeekStartsOn] = useState<WeekStartsOn>(
-    s === 0 || s === 1 || s === 6 ? s : WeekStartsOnValues.Monday,
-  );
+  // Always use Monday as week start
+  const weekStartsOn = WeekStartsOnValues.Monday;
   var [planEndDate, setPlanEndDate] = useState(
     d && isAfter(d, new Date())
       ? d
@@ -107,14 +106,6 @@ const App = () => {
     setq(getParams(u, selectedPlan, planEndDate, weekStartsOn));
   };
 
-  const onWeekStartsOnChanged = async (v: WeekStartsOn) => {
-    const racePlan = build(await repo.fetch(selectedPlan), planEndDate, v);
-    setWeekStartsOn(v);
-    setRacePlan(racePlan);
-    setUndoHistory([racePlan]);
-    setq(getParams(selectedUnits, selectedPlan, planEndDate, v));
-  };
-
   function swapDates(d1: Date, d2: Date): void {
     if (racePlan) {
       const newRacePlan = swap(racePlan, d1, d2);
@@ -176,14 +167,7 @@ const App = () => {
       <PlanAndDate
         availablePlans={repo.available}
         selectedPlan={selectedPlan}
-        selectedDate={planEndDate}
-        dateChangeHandler={onSelectedEndDateChange}
         selectedPlanChangeHandler={onSelectedPlanChange}
-        weekStartsOn={weekStartsOn}
-        weekStartsOnChangeHandler={onWeekStartsOnChanged}
-        selectedUnits={selectedUnits}
-        unitsChangeHandler={onSelectedUnitsChanged}
-        hideControls={true}
       />
       <PacesPanel selectedUser={selectedUser} onUserChange={setSelectedUser} />
       
@@ -209,23 +193,14 @@ const App = () => {
         <>
           <div className="controls-row">
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <h3 style={{ margin: 0, whiteSpace: 'nowrap' }}>Week starts on</h3>
-              <select className="select" value={weekStartsOn} onChange={(event) => {
-                const newValue = Number(event.target.value) as any;
-                onWeekStartsOnChanged(newValue);
-              }}>
-                <option key="monday" value={0}>Monday</option>
-                <option key="sunday" value={1}>Sunday</option>
-                <option key="saturday" value={6}>Saturday</option>
-              </select>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <h3 style={{ margin: 0, whiteSpace: 'nowrap' }}>ending on</h3>
+              <h3 style={{ margin: 0, whiteSpace: 'nowrap' }}>Plan ending on</h3>
               <input
                 type="date"
                 value={planEndDate.toISOString().split('T')[0]}
                 onChange={(e) => {
-                  const date = new Date(e.target.value);
+                  // Parse as local date to avoid timezone issues
+                  const [year, month, day] = e.target.value.split('-').map(Number);
+                  const date = new Date(year, month - 1, day);
                   onSelectedEndDateChange(date);
                 }}
                 style={{
