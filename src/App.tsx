@@ -48,7 +48,17 @@ const App = () => {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   useMountEffect(() => {
-    initialLoad(selectedPlan, planEndDate, selectedUnits, weekStartsOn);
+    // Use URL params if available, otherwise use state defaults
+    const planToLoad = p ? repo.find(p) : selectedPlan;
+    const dateToLoad = d && isAfter(d, new Date()) ? d : planEndDate;
+    const unitsToLoad = u === "mi" || u === "km" ? u : selectedUnits;
+    
+    if (planToLoad) {
+      setSelectedPlan(planToLoad);
+      setPlanEndDate(dateToLoad);
+      setSelectedUnits(unitsToLoad);
+      initialLoad(planToLoad, dateToLoad, unitsToLoad, weekStartsOn);
+    }
   });
 
   const [, forceUpdate] = React.useReducer((x) => x + 1, 0);
