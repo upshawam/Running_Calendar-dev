@@ -168,6 +168,8 @@ const App = () => {
         availablePlans={repo.available}
         selectedPlan={selectedPlan}
         selectedPlanChangeHandler={onSelectedPlanChange}
+        planEndDate={planEndDate}
+        onPlanEndDateChange={onSelectedEndDateChange}
       />
       <PacesPanel selectedUser={selectedUser} onUserChange={setSelectedUser} />
       
@@ -192,28 +194,6 @@ const App = () => {
       {showAdvanced && (
         <>
           <div className="controls-row">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <h3 style={{ margin: 0, whiteSpace: 'nowrap' }}>Plan ending on</h3>
-              <input
-                type="date"
-                value={planEndDate.toISOString().split('T')[0]}
-                onChange={(e) => {
-                  // Parse as local date to avoid timezone issues
-                  const [year, month, day] = e.target.value.split('-').map(Number);
-                  const date = new Date(year, month - 1, day);
-                  onSelectedEndDateChange(date);
-                }}
-                style={{
-                  padding: '0.4rem 0.6rem',
-                  fontSize: 'inherit',
-                  fontFamily: 'inherit',
-                  border: '1px solid var(--secondary-color)',
-                  borderRadius: '0.25rem',
-                  backgroundColor: 'var(--card-color)',
-                  color: 'var(--text-color)',
-                }}
-              />
-            </div>
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
               <h3 style={{ margin: 0, whiteSpace: 'nowrap' }}>Units:</h3>
               <button

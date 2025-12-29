@@ -1,3 +1,13 @@
+/* Container for plan picker and race date */
+.plan-and-date {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
 /* Desktop: Horizontal layout */
 .plan-picker-container {
   display: flex;
