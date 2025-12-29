@@ -6,6 +6,8 @@
   padding: 0.5rem;
   flex-wrap: wrap;
   justify-content: center;
+  position: relative;
+  z-index: 1;
 }
 
 /* Desktop: Horizontal layout */
@@ -29,7 +31,7 @@
   position: relative;
   flex: 1;
   min-width: 120px;
-  z-index: auto; /* Don't force stacking context on mobile */
+  z-index: 2000;
 }
 
 .dropdown-trigger {
@@ -72,7 +74,7 @@
   .custom-dropdown {
     flex: 0 0 300px;
     min-width: 300px;
-    z-index: 2000; /* Above date picker on desktop */
+    z-index: 2000;
   }
 }
 

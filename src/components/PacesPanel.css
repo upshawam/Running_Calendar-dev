@@ -1,10 +1,14 @@
 /* Mobile: Show vertical table, hide horizontal */
 .paces-table-vertical {
   display: block;
+  position: relative;
+  z-index: 1;
 }
 
 .paces-table-horizontal {
   display: none;
+  position: relative;
+  z-index: 1;
 }
 
 /* Desktop: Show horizontal row, hide vertical table */

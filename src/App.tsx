@@ -164,6 +164,7 @@ const App = () => {
           Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your env (e.g., .env.local) and restart the dev server.
         </div>
       )}
+      <PacesPanel selectedUser={selectedUser} onUserChange={setSelectedUser} />
       <PlanAndDate
         availablePlans={repo.available}
         selectedPlan={selectedPlan}
@@ -171,7 +172,6 @@ const App = () => {
         planEndDate={planEndDate}
         onPlanEndDateChange={onSelectedEndDateChange}
       />
-      <PacesPanel selectedUser={selectedUser} onUserChange={setSelectedUser} />
       
       <button
         onClick={() => setShowAdvanced(!showAdvanced)}
