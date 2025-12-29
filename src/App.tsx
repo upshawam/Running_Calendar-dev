@@ -24,6 +24,38 @@ import { useMountEffect } from "./ch/hooks";
 import { Units, PlanSummary, dayOfWeek } from "types/app";
 import { getLocaleUnits } from "./ch/localize";
 
+const STORAGE_KEY = "rc_plan_selection";
+
+const persistSelection = (plan: PlanSummary, date: Date, units: Units) => {
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ planId: plan.id, date: date.toISOString(), units }),
+    );
+  } catch (_) {
+    /* ignore storage issues */
+  }
+};
+
+const loadSelection = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return undefined;
+    const parsed = JSON.parse(raw) as {
+      planId?: string;
+      date?: string;
+      units?: Units;
+    };
+    const plan = parsed.planId ? repo.find(parsed.planId) : undefined;
+    const date = parsed.date ? new Date(parsed.date) : undefined;
+    const units = parsed.units === "mi" || parsed.units === "km" ? parsed.units : undefined;
+    if (plan && date && units) return { plan, date, units };
+  } catch (_) {
+    /* ignore parse errors */
+  }
+  return undefined;
+};
+
 const App = () => {
   const [{ u, p, d }, setq] = useQueryParams({
     u: StringParam,
@@ -48,11 +80,15 @@ const App = () => {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   useMountEffect(() => {
-    // Use URL params if available, otherwise use state defaults
-    const planToLoad = p ? repo.find(p) : selectedPlan;
-    const dateToLoad = d && isAfter(d, new Date()) ? d : planEndDate;
-    const unitsToLoad = u === "mi" || u === "km" ? u : selectedUnits;
-    
+    // Prefer URL params; otherwise fall back to last saved selection; otherwise defaults
+    const saved = loadSelection();
+    const planFromUrl = p ? repo.find(p) : undefined;
+    const planToLoad = planFromUrl || saved?.plan || selectedPlan;
+    const dateFromUrl = d && isAfter(d, new Date()) ? d : undefined;
+    const dateToLoad = dateFromUrl || saved?.date || planEndDate;
+    const unitsFromUrl = u === "mi" || u === "km" ? u : undefined;
+    const unitsToLoad = unitsFromUrl || saved?.units || selectedUnits;
+
     if (planToLoad) {
       setSelectedPlan(planToLoad);
       setPlanEndDate(dateToLoad);
@@ -101,6 +137,7 @@ const App = () => {
     setRacePlan(racePlan);
     setUndoHistory([racePlan]);
     setq(getParams(selectedUnits, plan, planEndDate, weekStartsOn));
+    persistSelection(plan, planEndDate, selectedUnits);
   };
 
   const onSelectedEndDateChange = async (date: Date) => {
@@ -109,11 +146,13 @@ const App = () => {
     setRacePlan(racePlan);
     setUndoHistory([racePlan]);
     setq(getParams(selectedUnits, selectedPlan, date, weekStartsOn));
+    persistSelection(selectedPlan, date, selectedUnits);
   };
 
   const onSelectedUnitsChanged = (u: Units) => {
     setSelectedUnits(u);
     setq(getParams(u, selectedPlan, planEndDate, weekStartsOn));
+    persistSelection(selectedPlan, planEndDate, u);
   };
 
   function swapDates(d1: Date, d2: Date): void {
