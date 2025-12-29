@@ -79,6 +79,12 @@ const App = () => {
   var [selectedUser, setSelectedUser] = useState<"aaron" | "kristin">("aaron");
   const [showAdvanced, setShowAdvanced] = useState(false);
 
+  // Show Supabase warning only in local dev to avoid banner on GitHub Pages
+  const showSupabaseWarning =
+    !supabaseConfigured &&
+    (typeof window !== "undefined") &&
+    (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+
   useMountEffect(() => {
     // Prefer URL params; otherwise fall back to last saved selection; otherwise defaults
     const saved = loadSelection();
@@ -198,7 +204,7 @@ const App = () => {
 
   return (
     <>
-      {!supabaseConfigured && (
+      {showSupabaseWarning && (
         <div
           style={{
             background: "#fff3cd",
