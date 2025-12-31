@@ -120,7 +120,7 @@ export const WorkoutCard = ({ dayDetails, date, units, paceData, isCurrentWeek, 
       <div 
         ref={preview} 
         className={`workout-card ${isDragging ? "dragging" : ""} ${workoutLog?.completed ? "completed" : ""}`}
-        style={{ display: 'flex', flexDirection: 'column', cursor: 'pointer' }}
+        style={{ display: 'flex', flexDirection: 'column', cursor: 'pointer', minWidth: 0, width: '100%' }}
         onClick={handleCardClick}
       >
         <Dateline $date={date} />
@@ -132,11 +132,11 @@ export const WorkoutCard = ({ dayDetails, date, units, paceData, isCurrentWeek, 
             fontSize: '1.2rem',
           }}>✓</div>
         )}
-        <div className="workout-content" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <div className="workout-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
           <div ref={drag} className="drag-handle">
             <DragHandle viewBox="0 0 32 36" />
           </div>
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
             {renderDesc(dayDetails, dayDetails.sourceUnits, units)}
           </div>
           {paceInfo && (
@@ -150,7 +150,9 @@ export const WorkoutCard = ({ dayDetails, date, units, paceData, isCurrentWeek, 
               textOverflow: 'ellipsis',
               paddingTop: '0.25rem',
               borderTop: '1px solid #eee',
-              marginTop: '0.25rem'
+              marginTop: '0.25rem',
+              maxWidth: '100%',
+              minWidth: 0,
             }}>{paceInfo}</div>
           )}
           {workoutLog?.actual_pace && (
@@ -160,6 +162,11 @@ export const WorkoutCard = ({ dayDetails, date, units, paceData, isCurrentWeek, 
               color: '#28a745',
               fontWeight: 600,
               marginTop: '0.25rem',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              maxWidth: '100%',
+              minWidth: 0,
             }}>
               Actual: {workoutLog.actual_pace}
             </div>
@@ -173,6 +180,8 @@ export const WorkoutCard = ({ dayDetails, date, units, paceData, isCurrentWeek, 
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
+              maxWidth: '100%',
+              minWidth: 0,
             }}>
               💬 {workoutLog.notes}
             </div>

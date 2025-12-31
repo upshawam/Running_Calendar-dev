@@ -311,6 +311,11 @@ svg.drag-handle {
   column-gap: 0.5em;
 }
 
+/* Ensure all grid children can shrink */
+.week-grid > * {
+  min-width: 0;
+}
+
 .tools-start {
   display: flex;
   justify-content: flex-start;
@@ -428,6 +433,8 @@ svg.drag-handle {
   opacity: 1;
   position: relative;
   transition: box-shadow 0.2s, transform 0.2s;
+  min-width: 0; /* Allow flex item to shrink below content size */
+  overflow: hidden; /* Prevent content from expanding card */
 }
 
 .workout-card:hover {
@@ -453,11 +460,15 @@ svg.drag-handle {
   p {
     white-space: pre-wrap;
     /* so newlines render correctly for workout text */
+    overflow: hidden; /* Prevent text overflow */
+    word-break: break-word; /* Break long words */
   }
   position: relative;
   height: 100%;
   padding: 0.1em 0.5em 1.5em 1.8em;
   border-radius: 0 0 0.25rem 0.25rem;
+  min-width: 0; /* Allow flex item to shrink */
+  overflow: hidden; /* Clip overflowing content */
   @media (min-width: 768px) {
     min-height: 4em;
   }
@@ -547,6 +558,8 @@ svg.drag-handle {
 
 .day-cell {
   height: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .dateline {
