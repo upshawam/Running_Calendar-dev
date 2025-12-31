@@ -72,6 +72,9 @@ export const CalendarGrid = ({
   const today = new Date();
   const todayCellRef = React.useRef<HTMLDivElement | null>(null);
   const [paceData, setPaceData] = React.useState<any>(null);
+  const [selectedCheckboxes, setSelectedCheckboxes] = React.useState<Date[]>([]);
+  const [showSwapConfirm, setShowSwapConfirm] = React.useState(false);
+  const [pendingSwap, setPendingSwap] = React.useState<[Date, Date] | null>(null);
   
   // Load pace data for selected user
   React.useEffect(() => {
@@ -93,6 +96,45 @@ export const CalendarGrid = ({
     }
     loadPaces();
   }, [selectedUser]);
+
+  // Handle checkbox selection
+  const handleCheckboxToggle = (date: Date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    const isSelected = selectedCheckboxes.some(d => d.toISOString().split('T')[0] === dateStr);
+    
+    if (isSelected) {
+      // Deselect
+      setSelectedCheckboxes(selectedCheckboxes.filter(d => d.toISOString().split('T')[0] !== dateStr));
+    } else {
+      // Select
+      if (selectedCheckboxes.length < 2) {
+        setSelectedCheckboxes([...selectedCheckboxes, date]);
+        
+        // If we now have 2 selected, show confirmation dialog
+        if (selectedCheckboxes.length === 1) {
+          setPendingSwap([selectedCheckboxes[0], date]);
+          setShowSwapConfirm(true);
+        }
+      }
+    }
+  };
+
+  // Handle swap confirmation
+  const handleConfirmSwap = () => {
+    if (pendingSwap) {
+      swapDates(pendingSwap[0], pendingSwap[1]);
+      setSelectedCheckboxes([]);
+      setShowSwapConfirm(false);
+      setPendingSwap(null);
+    }
+  };
+
+  // Handle swap cancellation
+  const handleCancelSwap = () => {
+    setSelectedCheckboxes([]);
+    setShowSwapConfirm(false);
+    setPendingSwap(null);
+  };
   
   // Calculate current week boundaries
   const currentWeekStart = startOfWeek(today, { weekStartsOn });
@@ -140,6 +182,8 @@ export const CalendarGrid = ({
         {w.days.map((d, _) => {
           const isToday = isSameDay(d.date, today);
           const isCurrentWeek = isWithinInterval(d.date, { start: currentWeekStart, end: currentWeekEnd });
+          const dateStr = d.date.toISOString().split('T')[0];
+          const isCheckboxSelected = selectedCheckboxes.some(sel => sel.toISOString().split('T')[0] === dateStr);
           return (
             <DayCell
               key={key(d.date)}
@@ -154,6 +198,8 @@ export const CalendarGrid = ({
               paceData={paceData}
               isCurrentWeek={isCurrentWeek}
               userId={selectedUser}
+              isCheckboxSelected={isCheckboxSelected}
+              onCheckboxToggle={handleCheckboxToggle}
             />
           );
         })}
@@ -189,6 +235,72 @@ export const CalendarGrid = ({
     <div className="calendar-grid">
       {getHeader()}
       {racePlan.dateGrid.weeks.map((w, _) => getWeek(w))}
+      
+      {/* Swap confirmation dialog */}
+      {showSwapConfirm && pendingSwap && (
+        <div style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          background: 'white',
+          border: '1px solid #ccc',
+          borderRadius: '0.5rem',
+          padding: '2rem',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+          zIndex: 1000,
+          minWidth: '300px',
+        }}>
+          <p style={{ marginBottom: '1.5rem', fontSize: '1rem' }}>
+            Swap these days?
+          </p>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+            <button
+              onClick={handleCancelSwap}
+              style={{
+                padding: '0.5rem 1rem',
+                background: '#f0f0f0',
+                border: '1px solid #ddd',
+                borderRadius: '0.25rem',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirmSwap}
+              style={{
+                padding: '0.5rem 1rem',
+                background: '#28a745',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.25rem',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+              }}
+            >
+              Yes
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {/* Overlay for modal */}
+      {showSwapConfirm && (
+        <div
+          onClick={handleCancelSwap}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.3)',
+            zIndex: 999,
+          }}
+        />
+      )}
     </div>
   );
 };

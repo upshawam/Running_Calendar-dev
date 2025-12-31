@@ -17,6 +17,8 @@ interface Props {
   paceData?: any;
   isCurrentWeek?: boolean;
   userId: 'aaron' | 'kristin';
+  isCheckboxSelected: boolean;
+  onCheckboxToggle: (date: Date) => void;
 }
 
 function renderDesc(
@@ -68,7 +70,7 @@ function matchPaceType(title: string, paceData: any): string | null {
   return null;
 }
 
-export const WorkoutCard = ({ dayDetails, date, units, paceData, isCurrentWeek, userId }: Props) => {
+export const WorkoutCard = ({ dayDetails, date, units, paceData, isCurrentWeek, userId, isCheckboxSelected, onCheckboxToggle }: Props) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [workoutLog, setWorkoutLog] = useState<WorkoutLog | null>(null);
 
@@ -108,11 +110,16 @@ export const WorkoutCard = ({ dayDetails, date, units, paceData, isCurrentWeek, 
 
   // Handle click to open modal
   const handleCardClick = (e: React.MouseEvent) => {
-    // Don't open modal if clicking the drag handle
-    if ((e.target as HTMLElement).closest('.drag-handle')) {
+    // Don't open modal if clicking the drag handle or checkbox
+    if ((e.target as HTMLElement).closest('.drag-handle') || (e.target as HTMLElement).closest('input[type="checkbox"]')) {
       return;
     }
     setIsModalOpen(true);
+  };
+
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    onCheckboxToggle(date);
   };
   
   return (
@@ -120,15 +127,38 @@ export const WorkoutCard = ({ dayDetails, date, units, paceData, isCurrentWeek, 
       <div 
         ref={preview} 
         className={`workout-card ${isDragging ? "dragging" : ""} ${workoutLog?.completed ? "completed" : ""}`}
-        style={{ display: 'flex', flexDirection: 'column', cursor: 'pointer', minWidth: 0, width: '100%' }}
+        style={{ display: 'flex', flexDirection: 'column', cursor: 'pointer', minWidth: 0, width: '100%', position: 'relative' }}
         onClick={handleCardClick}
       >
         <Dateline $date={date} />
+        
+        {/* Checkbox for swap selection */}
+        <input
+          type="checkbox"
+          checked={isCheckboxSelected}
+          onChange={handleCheckboxChange}
+          style={{
+            position: 'absolute',
+            bottom: '0.25rem',
+            right: '0.25rem',
+            width: '1.25rem',
+            height: '1.25rem',
+            cursor: 'pointer',
+            zIndex: 10,
+            margin: 0,
+            padding: 0,
+            opacity: 0.4,
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+          onMouseLeave={(e) => e.currentTarget.style.opacity = isCheckboxSelected ? '1' : '0.4'}
+          title="Select workout for swap"
+        />
+        
         {workoutLog?.completed && (
           <div style={{
             position: 'absolute',
             top: '0.5rem',
-            right: '0.5rem',
+            left: '0.5rem',
             fontSize: '1.2rem',
           }}>✓</div>
         )}

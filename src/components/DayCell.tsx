@@ -17,6 +17,8 @@ interface Props {
   paceData?: any;
   isCurrentWeek?: boolean;
   userId: 'aaron' | 'kristin';
+  isCheckboxSelected: boolean;
+  onCheckboxToggle: (date: Date) => void;
 }
 
 export const DayCell = ({
@@ -31,6 +33,8 @@ export const DayCell = ({
   paceData,
   isCurrentWeek,
   userId,
+  isCheckboxSelected,
+  onCheckboxToggle,
 }: Props) => {
   if (isToday) {
     // Debug: log when today cell is detected
@@ -80,6 +84,8 @@ export const DayCell = ({
             paceData={paceData}
             isCurrentWeek={isCurrentWeek}
             userId={userId}
+            isCheckboxSelected={isCheckboxSelected}
+            onCheckboxToggle={onCheckboxToggle}
           />
         )}
         {!dayDetails && <BlankCard date={date} />}
