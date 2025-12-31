@@ -27,7 +27,7 @@ export const WeekSummary = ({
   return (
     <div className="week-summary" key={"week:" + week.weekNum}>
       <p>
-        <strong>{`Week ${1 + week.weekNum}`}</strong>
+        <strong>{`Week ${week.weekNum}`}</strong>
       </p>
       {distance[0] > 0 && <p>{renderDist(distance, units, units)}</p>}
       {isFirstWeek && <img src={StartIcon} alt={"Start"} />}

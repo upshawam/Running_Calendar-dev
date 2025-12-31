@@ -26,9 +26,12 @@ export function calcPlanDates(
   const daysInPlan = numWeeksInPlan * 7;
   const planStartsOn = subDays(planEndsOn, daysInPlan - 1);
   const end = startOfDay(endOfWeek(planEndsOn, { weekStartsOn: weekStartsOn }));
+  
+  // Always start at the beginning of the week for display purposes
   const start = startOfDay(
     startOfWeek(planStartsOn, { weekStartsOn: weekStartsOn }),
   );
+  
   const totalDays = 1 + differenceInCalendarDays(end, start);
   if (0 !== totalDays % 7) {
     throw new Error("total days %7 !==0: " + totalDays);
