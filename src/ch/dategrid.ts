@@ -182,12 +182,12 @@ export class DateGrid<T> {
   swap(d1: Date, d2: Date) {
     const e1 = this.getEvent(d1);
     const e2 = this.getEvent(d2);
-    if (e1 && e2) {
-      // only swap if both dates have event data
-      const temp = e1;
-      this.setEvent(d1, e2);
-      this.setEvent(d2, temp);
-    }
+    
+    // Swap even if one or both dates are blank (rest days)
+    // This allows moving workouts to/from rest days
+    const temp = e1;
+    this.setEvent(d1, e2);
+    this.setEvent(d2, temp);
   }
 
   swapDow(dow1: dayOfWeek, dow2: dayOfWeek) {

@@ -12,6 +12,7 @@ import UndoButton from "./components/UndoButton";
 import PacesPanel from "./components/PacesPanel";
 import history from "./defy/history";
 import { supabaseConfigured } from "./lib/supabaseClient";
+import { fetchCustomizations, saveSwapOperation, DateWorkoutCustomization } from "./lib/customizationService";
 import {
   useQueryParams,
   StringParam,
@@ -79,6 +80,53 @@ const App = () => {
   var [selectedUser, setSelectedUser] = useState<"aaron" | "kristin">("aaron");
   const [showAdvanced, setShowAdvanced] = useState(false);
 
+  // Apply customizations by directly setting events at customized dates
+  const applyCustomizations = (racePlan: RacePlan, customizations: DateWorkoutCustomization): RacePlan => {
+    if (!customizations || Object.keys(customizations).length === 0) {
+      return racePlan;
+    }
+    
+    const newPlan = {
+      ...racePlan,
+      dateGrid: racePlan.dateGrid.clone(),
+    };
+
+    // For each customized date, set the event to what's stored
+    for (const [dateStr, workoutTitle] of Object.entries(customizations)) {
+      const date = new Date(dateStr + 'T00:00:00');
+      
+      // Handle null as "truly blank" (shouldn't happen anymore, but keep for safety)
+      if (workoutTitle === null) {
+        // Leave it blank - it will be rendered as a blank day
+        continue;
+      } else {
+        // Find the event from the original plan that matches this title
+        // and set it at this date
+        const event = racePlan.dateGrid.getEvent(date);
+        if (event && event.title === workoutTitle) {
+          // Already correct
+          continue;
+        }
+        
+        // Search for an event with this title in the entire plan
+        let foundEvent = undefined;
+        for (let d = new Date(racePlan.planDates.start); d <= racePlan.planDates.end; d.setDate(d.getDate() + 1)) {
+          const e = racePlan.dateGrid.getEvent(new Date(d));
+          if (e && e.title === workoutTitle) {
+            foundEvent = e;
+            break;
+          }
+        }
+        
+        if (foundEvent) {
+          newPlan.dateGrid.setEvent(date, foundEvent);
+        }
+      }
+    }
+
+    return newPlan;
+  };
+
   // Show Supabase warning only in local dev to avoid banner on GitHub Pages
   const showSupabaseWarning =
     !supabaseConfigured &&
@@ -111,6 +159,31 @@ const App = () => {
     });
   }, []);
 
+  // When user is switched, reload customizations for the current plan/date
+  React.useEffect(() => {
+    const reloadWithUserCustomizations = async () => {
+      if (racePlan && selectedPlan) {
+        // Fetch customizations for the newly selected user
+        const customizations = await fetchCustomizations(
+          selectedUser,
+          selectedPlan.id,
+          planEndDate.toISOString().split('T')[0]
+        );
+        
+        // Rebuild the plan from scratch and apply customizations
+        let updatedRacePlan = build(await repo.fetch(selectedPlan), planEndDate, weekStartsOn);
+        
+        // Apply the customizations directly
+        updatedRacePlan = applyCustomizations(updatedRacePlan, customizations);
+        
+        setRacePlan(updatedRacePlan);
+        setUndoHistory([updatedRacePlan]);
+      }
+    };
+    
+    reloadWithUserCustomizations();
+  }, [selectedUser]);
+
   const getParams = (
     units: Units,
     plan: PlanSummary,
@@ -131,14 +204,36 @@ const App = () => {
     units: Units,
     weekStartsOn: WeekStartsOn,
   ) => {
-    const racePlan = build(await repo.fetch(plan), endDate, weekStartsOn);
+    let racePlan = build(await repo.fetch(plan), endDate, weekStartsOn);
+    
+    // Apply saved customizations for this user, plan, and date
+    const customizations = await fetchCustomizations(
+      selectedUser,
+      plan.id,
+      endDate.toISOString().split('T')[0]
+    );
+    
+    // Apply the customizations directly
+    racePlan = applyCustomizations(racePlan, customizations);
+    
     setRacePlan(racePlan);
     setUndoHistory([...undoHistory, racePlan]);
     setq(getParams(units, plan, endDate, weekStartsOn));
   };
 
   const onSelectedPlanChange = async (plan: PlanSummary) => {
-    const racePlan = build(await repo.fetch(plan), planEndDate, weekStartsOn);
+    let racePlan = build(await repo.fetch(plan), planEndDate, weekStartsOn);
+    
+    // Apply saved customizations for the new plan
+    const customizations = await fetchCustomizations(
+      selectedUser,
+      plan.id,
+      planEndDate.toISOString().split('T')[0]
+    );
+    
+    // Apply the customizations directly
+    racePlan = applyCustomizations(racePlan, customizations);
+    
     setSelectedPlan(plan);
     setRacePlan(racePlan);
     setUndoHistory([racePlan]);
@@ -147,7 +242,18 @@ const App = () => {
   };
 
   const onSelectedEndDateChange = async (date: Date) => {
-    const racePlan = build(await repo.fetch(selectedPlan), date, weekStartsOn);
+    let racePlan = build(await repo.fetch(selectedPlan), date, weekStartsOn);
+    
+    // Apply saved customizations for the new date
+    const customizations = await fetchCustomizations(
+      selectedUser,
+      selectedPlan.id,
+      date.toISOString().split('T')[0]
+    );
+    
+    // Apply the customizations directly
+    racePlan = applyCustomizations(racePlan, customizations);
+    
     setPlanEndDate(date);
     setRacePlan(racePlan);
     setUndoHistory([racePlan]);
@@ -166,6 +272,16 @@ const App = () => {
       const newRacePlan = swap(racePlan, d1, d2);
       setRacePlan(newRacePlan);
       setUndoHistory([...undoHistory, newRacePlan]);
+      
+      // Save this swap operation to Supabase
+      saveSwapOperation(
+        selectedUser,
+        selectedPlan.id,
+        planEndDate.toISOString().split('T')[0],
+        d1,
+        d2,
+        newRacePlan
+      ).catch(err => console.error('Failed to save swap:', err));
     }
   }
 

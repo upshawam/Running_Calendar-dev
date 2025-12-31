@@ -66,6 +66,33 @@ CREATE POLICY "Allow all access to workout_logs"
   FOR ALL
   USING (true)
   WITH CHECK (true);
+
+-- Create workout_customizations table for drag-and-drop persistence
+CREATE TABLE workout_customizations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id TEXT NOT NULL CHECK (user_id IN ('aaron', 'kristin')),
+  plan_id TEXT NOT NULL,
+  race_date DATE NOT NULL,
+  customizations JSONB NOT NULL DEFAULT '[]'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  
+  -- Ensure one customization record per user per plan+date combination
+  UNIQUE(user_id, plan_id, race_date)
+);
+
+-- Add index for faster queries
+CREATE INDEX idx_workout_customizations_user_plan ON workout_customizations(user_id, plan_id, race_date);
+
+-- Enable Row Level Security
+ALTER TABLE workout_customizations ENABLE ROW LEVEL SECURITY;
+
+-- Create policies for public access
+CREATE POLICY "Allow all access to workout_customizations"
+  ON workout_customizations
+  FOR ALL
+  USING (true)
+  WITH CHECK (true);
 \`\`\`
 
 4. Click **Run** (or press Ctrl/Cmd + Enter)
