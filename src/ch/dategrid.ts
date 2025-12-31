@@ -99,9 +99,32 @@ export class DateGrid<T> {
   get weeks(): Week<T>[] {
     const weeks = [];
     const allDays = this.days;
+    
+    // Helper to check if an event has actual workout content
+    const hasActualWorkout = (event: any): boolean => {
+      if (!event) return false;
+      // Check if event has a non-empty title or description
+      const hasTitle = event.title && event.title.trim() !== '';
+      const hasDesc = event.desc && event.desc.trim() !== '';
+      return hasTitle || hasDesc;
+    };
+    
+    // Find the first week with actual workouts (non-empty content)
+    let firstNonEmptyWeek = -1;
     for (let i = 0; i < this.weekCount; i++) {
       const daysSlice = allDays.slice(i * 7, i * 7 + 7);
-      weeks.push({ weekNum: i, dist: [0.0], desc: `Week ${i}`, days: daysSlice });
+      const hasWorkouts = daysSlice.some(day => hasActualWorkout(day.event));
+      if (hasWorkouts && firstNonEmptyWeek === -1) {
+        firstNonEmptyWeek = i;
+        break;
+      }
+    }
+    
+    // Build weeks, adjusting weekNum to start from 0 at first non-empty week
+    for (let i = 0; i < this.weekCount; i++) {
+      const daysSlice = allDays.slice(i * 7, i * 7 + 7);
+      const adjustedWeekNum = firstNonEmptyWeek >= 0 ? i - firstNonEmptyWeek : i;
+      weeks.push({ weekNum: adjustedWeekNum, dist: [0.0], desc: `Week ${adjustedWeekNum}`, days: daysSlice });
     }
     return weeks;
   }
