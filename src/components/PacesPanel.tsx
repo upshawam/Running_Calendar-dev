@@ -32,22 +32,33 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "", selectedUser, o
 
   // Helper to parse pace string "6:46/mi" to total seconds
   const paceToSeconds = (paceStr: string): number | null => {
-    const match = paceStr.match(/(\d+):(\d+)/);
+    // Remove any ellipsis or extra characters
+    const cleaned = paceStr.replace(/[…\s]/g, '').trim();
+    const match = cleaned.match(/(\d+):(\d+)/);
     if (!match) return null;
     const [_, mins, secs] = match;
     return parseInt(mins) * 60 + parseInt(secs);
   };
 
-  // Get midpoint of pace range "6:46/mi - 6:54/mi"
+  // Get midpoint of pace range "6:46/mi - 6:54/mi", or return the single pace if only one exists
   const getMidpointSeconds = (paceRange: string): number | null => {
     const parts = paceRange.split('-').map(s => s.trim());
-    if (parts.length !== 2) return null;
     
-    const start = paceToSeconds(parts[0]);
-    const end = paceToSeconds(parts[1]);
+    // If only one pace, or second part is just ellipsis (like Recovery), use the first one
+    if (parts.length === 1 || (parts.length === 2 && (parts[1] === '…' || parts[1] === ''))) {
+      return paceToSeconds(parts[0]);
+    }
     
-    if (start === null || end === null) return null;
-    return (start + end) / 2;
+    // If range with both values, calculate midpoint
+    if (parts.length === 2) {
+      const start = paceToSeconds(parts[0]);
+      const end = paceToSeconds(parts[1]);
+      
+      if (start === null || end === null) return null;
+      return (start + end) / 2;
+    }
+    
+    return null;
   };
 
   // Calculate trend for a pace category
@@ -109,7 +120,7 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "", selectedUser, o
     details += `Current: ${recentPace}\n`;
     details += `Previous: ${weekAgoPace}\n`;
     
-    if (Math.abs(change) < 2) {
+    if (Math.abs(change) < 1) {
       details += `Change: ~${changeStr}/mi (no significant change)`;
       return { arrow: '➖', change: 0, details };
     }
