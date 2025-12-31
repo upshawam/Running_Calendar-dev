@@ -22,7 +22,7 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "", selectedUser, o
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isHidden, setIsHidden] = useState(false);
+  const [isHidden, setIsHidden] = useState(true);
 
   useEffect(() => {
     loadPacesData(selectedUser);

@@ -149,8 +149,6 @@ export const WorkoutCard = ({ dayDetails, date, units, paceData, isCurrentWeek, 
             padding: 0,
             opacity: 0.4,
           }}
-          onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-          onMouseLeave={(e) => e.currentTarget.style.opacity = isCheckboxSelected ? '1' : '0.4'}
           title="Select workout for swap"
         />
         
