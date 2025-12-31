@@ -23,10 +23,105 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "", selectedUser, o
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isHidden, setIsHidden] = useState(true);
+  const [pacesHistory, setPacesHistory] = useState<PacesHistory[]>([]);
+  const [trendModal, setTrendModal] = useState<{ show: boolean; details: string }>({ show: false, details: '' });
 
   useEffect(() => {
     loadPacesData(selectedUser);
   }, [selectedUser]);
+
+  // Helper to parse pace string "6:46/mi" to total seconds
+  const paceToSeconds = (paceStr: string): number | null => {
+    const match = paceStr.match(/(\d+):(\d+)/);
+    if (!match) return null;
+    const [_, mins, secs] = match;
+    return parseInt(mins) * 60 + parseInt(secs);
+  };
+
+  // Get midpoint of pace range "6:46/mi - 6:54/mi"
+  const getMidpointSeconds = (paceRange: string): number | null => {
+    const parts = paceRange.split('-').map(s => s.trim());
+    if (parts.length !== 2) return null;
+    
+    const start = paceToSeconds(parts[0]);
+    const end = paceToSeconds(parts[1]);
+    
+    if (start === null || end === null) return null;
+    return (start + end) / 2;
+  };
+
+  // Calculate trend for a pace category
+  const calculateTrend = (categoryName: string): { arrow: string; change: number; details: string } | null => {
+    if (pacesHistory.length < 2) return null;
+
+    // Get most recent entry
+    const recent = pacesHistory[pacesHistory.length - 1];
+    const recentDate = new Date(recent.date);
+
+    // Find entry from ~7 days ago (look for closest match within 5-9 days back)
+    let weekAgo = null;
+    let weekAgoIndex = -1;
+    for (let i = pacesHistory.length - 2; i >= 0; i--) {
+      const entryDate = new Date(pacesHistory[i].date);
+      const daysDiff = (recentDate.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24);
+      
+      if (daysDiff >= 5 && daysDiff <= 9) {
+        weekAgo = pacesHistory[i];
+        weekAgoIndex = i;
+        break;
+      }
+    }
+
+    // If no week-old entry found, try to get one from 2+ weeks ago as fallback
+    if (!weekAgo && pacesHistory.length >= 3) {
+      weekAgoIndex = Math.max(0, pacesHistory.length - 8);
+      weekAgo = pacesHistory[weekAgoIndex];
+    }
+
+    if (!weekAgo) return null;
+
+    const recentPace = (recent.paces as any)[categoryName]?.pace_range;
+    const weekAgoPace = (weekAgo.paces as any)[categoryName]?.pace_range;
+
+    if (!recentPace || !weekAgoPace) return null;
+
+    const recentMid = getMidpointSeconds(recentPace);
+    const weekAgoMid = getMidpointSeconds(weekAgoPace);
+
+    if (recentMid === null || weekAgoMid === null) return null;
+
+    const change = recentMid - weekAgoMid; // negative = faster (improvement)
+    
+    // Format dates for display
+    const recentDateStr = new Date(recent.date).toLocaleDateString();
+    const weekAgoDateStr = new Date(weekAgo.date).toLocaleDateString();
+    
+    // Calculate days between
+    const daysBetween = Math.round((recentDate.getTime() - new Date(weekAgo.date).getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Format pace change
+    const changeAbs = Math.abs(change);
+    const changeMins = Math.floor(changeAbs / 60);
+    const changeSecs = Math.round(changeAbs % 60);
+    const changeStr = changeMins > 0 ? `${changeMins}:${changeSecs.toString().padStart(2, '0')}` : `${changeSecs}s`;
+
+    let details = `Comparing ${recentDateStr} to ${weekAgoDateStr} (${daysBetween} days ago)\n`;
+    details += `Current: ${recentPace}\n`;
+    details += `Previous: ${weekAgoPace}\n`;
+    
+    if (Math.abs(change) < 2) {
+      details += `Change: ~${changeStr}/mi (no significant change)`;
+      return { arrow: '➖', change: 0, details };
+    }
+    
+    if (change < 0) {
+      details += `Improvement: ${changeStr}/mi faster! 🎉`;
+      return { arrow: '✅', change: changeAbs, details };
+    }
+    
+    details += `Change: ${changeStr}/mi slower`;
+    return { arrow: '⚠️', change: changeAbs, details };
+  };
 
   const loadPacesData = async (user: "aaron" | "kristin") => {
     setLoading(true);
@@ -41,6 +136,8 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "", selectedUser, o
       }
 
       const history: PacesHistory[] = await response.json();
+      setPacesHistory(history);
+      
       if (history.length > 0) {
         // Get the most recent paces data
         const latestData = history[history.length - 1];
@@ -276,10 +373,31 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "", selectedUser, o
                 row.synonyms.some(syn => k.toLowerCase().includes(syn))
               );
               let value = foundKey ? (pacesData as any)[foundKey].pace_range : "-";
+              let trend = foundKey ? calculateTrend(foundKey) : null;
+              
               return (
                 <div key={i} className="pace-zone">
                   <span className="pace-zone-label">{row.label}</span>
-                  <span className="pace-zone-value">{value || "-"}</span>
+                  <span className="pace-zone-value">
+                    {value || "-"}
+                    {trend && (
+                      <span 
+                        style={{ 
+                          marginLeft: '0.5em', 
+                          fontSize: '1em',
+                          fontWeight: 'bold',
+                          cursor: 'pointer'
+                        }}
+                        title={trend.details}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setTrendModal({ show: true, details: trend.details });
+                        }}
+                      >
+                        {trend.arrow}
+                      </span>
+                    )}
+                  </span>
                 </div>
               );
             })}
@@ -309,6 +427,8 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "", selectedUser, o
                     row.synonyms.some(syn => k.toLowerCase().includes(syn))
                   );
                   let value = foundKey ? (pacesData as any)[foundKey].pace_range : "-";
+                  let trend = foundKey ? calculateTrend(foundKey) : null;
+                  
                   return (
                     <tr key={i}>
                       <td className="pace-label" style={{
@@ -335,7 +455,26 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "", selectedUser, o
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         maxWidth: '16em',
-                      }}>{value || "-"}</td>
+                      }}>
+                        {value || "-"}
+                        {trend && (
+                          <span 
+                            style={{ 
+                              marginLeft: '0.5em', 
+                              fontSize: '1em',
+                              fontWeight: 'bold',
+                              cursor: 'pointer'
+                            }}
+                            title={trend.details}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setTrendModal({ show: true, details: trend.details });
+                            }}
+                          >
+                            {trend.arrow}
+                          </span>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}
@@ -349,6 +488,67 @@ const PacesPanel: React.FC<PacesPanelProps> = ({ className = "", selectedUser, o
         <div style={{ textAlign: "center", padding: "2rem", color: "var(--disabled-fg-color)" }}>
           <p>No pace data available for {selectedUser}</p>
         </div>
+      )}
+
+      {/* Trend Details Modal */}
+      {trendModal.show && (
+        <>
+          <div
+            onClick={() => setTrendModal({ show: false, details: '' })}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0,0,0,0.5)',
+              zIndex: 1000,
+            }}
+          />
+          <div
+            style={{
+              position: 'fixed',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              background: 'white',
+              border: '2px solid var(--secondary-color)',
+              borderRadius: '0.5rem',
+              padding: '1.5rem',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+              zIndex: 1001,
+              maxWidth: '90%',
+              minWidth: '300px',
+            }}
+          >
+            <h3 style={{ marginTop: 0, marginBottom: '1rem', color: 'var(--text-color)' }}>Pace Trend Details</h3>
+            <pre style={{ 
+              whiteSpace: 'pre-wrap', 
+              fontFamily: 'inherit',
+              margin: '0 0 1rem 0',
+              color: 'var(--text-color)',
+              fontSize: '0.9rem',
+              lineHeight: '1.5'
+            }}>
+              {trendModal.details}
+            </pre>
+            <button
+              onClick={() => setTrendModal({ show: false, details: '' })}
+              style={{
+                padding: '0.5rem 1rem',
+                background: 'var(--secondary-color)',
+                color: 'var(--text-color)',
+                border: 'none',
+                borderRadius: '0.25rem',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                fontWeight: 'bold',
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </>
       )}
     </div>
   );
