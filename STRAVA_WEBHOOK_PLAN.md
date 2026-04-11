@@ -178,6 +178,28 @@ You can still manually edit or add notes afterward!
 
 ## Troubleshooting
 
+### Project Paused (Supabase Free Tier)
+If the project is currently paused, you must **resume it once** in the Supabase dashboard first.
+
+Then set up an automated keep-alive ping:
+
+1. Deploy keep-alive edge function:
+   ```powershell
+   supabase functions deploy keep-alive
+   ```
+2. Set function secret:
+   ```powershell
+   supabase secrets set KEEP_ALIVE_CRON_SECRET=your_long_random_secret
+   ```
+3. In GitHub repo settings, add Actions secrets:
+   - `SUPABASE_PROJECT_REF` = your project ref
+   - `SUPABASE_KEEPALIVE_TOKEN` = same value as `KEEP_ALIVE_CRON_SECRET`
+4. Enable workflow in [/.github/workflows/supabase-keepalive.yml](.github/workflows/supabase-keepalive.yml)
+
+This pings your Supabase function every 3 days and performs a lightweight DB query to keep activity flowing.
+
+> Note: On Free tier, pauses can still happen based on platform policy. This reduces risk but does not guarantee always-on uptime.
+
 ### Webhook Not Firing
 1. Check Strava subscription status:
    ```powershell

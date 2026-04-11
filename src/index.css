@@ -448,6 +448,7 @@ svg.drag-handle {
 
 .workout-card.completed {
   border-left: 3px solid #28a745;
+  background-color: #dcfce7;
 }
 
 .workout-content {

@@ -1,0 +1,31 @@
+name: Supabase Keep Alive
+
+on:
+  schedule:
+    # Every 3 days at 09:15 UTC
+    - cron: '15 9 */3 * *'
+  workflow_dispatch:
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping keep-alive edge function
+        env:
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_KEEPALIVE_TOKEN: ${{ secrets.SUPABASE_KEEPALIVE_TOKEN }}
+        run: |
+          if [ -z "$SUPABASE_PROJECT_REF" ] || [ -z "$SUPABASE_KEEPALIVE_TOKEN" ]; then
+            echo "Missing required secrets: SUPABASE_PROJECT_REF and/or SUPABASE_KEEPALIVE_TOKEN"
+            exit 1
+          fi
+
+          url="https://${SUPABASE_PROJECT_REF}.supabase.co/functions/v1/keep-alive"
+          echo "Pinging ${url}"
+
+          curl --fail --show-error --silent \
+            --retry 3 \
+            --retry-delay 5 \
+            --header "Authorization: Bearer ${SUPABASE_KEEPALIVE_TOKEN}" \
+            "${url}"
+          echo "\nKeep-alive ping completed"
