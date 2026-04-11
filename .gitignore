@@ -25,3 +25,8 @@ yarn-debug.log*
 yarn-error.log*
 
 my_env
+# Large files to ignore
+googlechrome.dmg
+TN_Petros_20160411_TM_geo.pdf
+*.dmg
+*.pdf

@@ -64,6 +64,7 @@ export function build(
   });
   const dateGrid = new DateGrid(map, weekStartsOn);
   return {
+    id: trainingPlan.id,
     raceType: trainingPlan.type,
     planDates: planDates,
     dateGrid: dateGrid,
@@ -75,6 +76,7 @@ export function build(
 
 export function swap(racePlan: RacePlan, d1: Date, d2: Date): RacePlan {
   const newPlan = {
+    id: racePlan.id,
     planDates: racePlan.planDates,
     raceType: racePlan.raceType,
     title: racePlan.raceType,
@@ -93,6 +95,7 @@ export function swapDow(
   dow2: dayOfWeek,
 ): RacePlan {
   const newPlan = {
+    id: racePlan.id,
     planDates: racePlan.planDates,
     raceType: racePlan.raceType,
     title: racePlan.raceType,

@@ -34,6 +34,7 @@ export const key = (d: Date) => format(d, "yyyy/MM/dd");
 // Race plan is a TrainingPlan rendered for a specific goal race day plus all of the various
 // customizations applied to it by an end user.
 export interface RacePlan {
+  id: string;
   planDates: PlanDates;
   raceType: RaceType;
   dateGrid: DateGrid<DayDetails>;
