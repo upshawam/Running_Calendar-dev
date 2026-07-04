@@ -349,7 +349,7 @@ def parse_training_paces_html(html_content):
     for line in candidate_lines:
         category = _match_category(line)
         pace_range = _extract_pace_range(line)
-        if category and pace_range:
+        if category and pace_range and category not in paces:
             paces[category] = {
                 "pace_range": pace_range,
                 "vo2_percent": _extract_vo2_percent(line)
