@@ -67,15 +67,26 @@ jobs:
         cp public/data/aaron_paces.json docs/data/aaron_paces.json
         cp public/data/kristin_paces.json docs/data/kristin_paces.json
         
-        # Verify paces were added
+        # Verify paces were added and latest snapshots are non-empty
         python3 -c "
         import json
-        with open('public/data/aaron_paces.json') as f:
-          data = json.load(f)
-        if len(data) < 2:
-          print('ERROR: No new paces entry was added!')
-          exit(1)
-        print(f'✓ Successfully saved paces with {len(data)} total entries')
+        def validate(path, user):
+          with open(path) as f:
+            data = json.load(f)
+          if len(data) < 2:
+            print(f'ERROR: No new paces entry was added for {user}!')
+            exit(1)
+          latest = data[-1].get('paces', {})
+          if not latest:
+            print(f'ERROR: Latest paces for {user} are empty!')
+            exit(1)
+          if len(latest) < 4:
+            print(f'ERROR: Latest paces for {user} have too few categories ({len(latest)}).')
+            exit(1)
+          print(f'✓ {user}: saved {len(latest)} pace categories ({len(data)} total snapshots)')
+
+        validate('public/data/aaron_paces.json', 'aaron')
+        validate('public/data/kristin_paces.json', 'kristin')
         "
 
     - name: Commit and push changes

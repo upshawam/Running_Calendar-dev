@@ -6,6 +6,52 @@ from datetime import datetime
 from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
 
+PACE_CATEGORIES = {
+    "Recovery": [r"\brecovery(?!\s*time)\b"],
+    "Aerobic": [r"\baerobic\b"],
+    "Long/Medium long": [r"\blong\s*/\s*medium\s*long\b", r"\blong\s+/?\s*medium\s+long\b"],
+    "Marathon": [r"\bmarathon\b"],
+    "Lactate threshold": [r"\blactate\s*threshold\b", r"\bthreshold\b"],
+    "VO2max": [r"\bvo\s*2\s*max\b", r"\bvo₂\s*max\b", r"\bvo2max\b"],
+}
+
+
+def _normalize_whitespace(text):
+    return ' '.join(text.split())
+
+
+def _match_category(text):
+    lowered = text.lower()
+    for category, patterns in PACE_CATEGORIES.items():
+        if any(re.search(pattern, lowered, flags=re.IGNORECASE) for pattern in patterns):
+            return category
+    return None
+
+
+def _extract_pace_range(text):
+    patterns = [
+        # e.g. 8:05 - 8:40 /mi
+        r'(\d{1,2}:\d{2}(?::\d{2})?\s*(?:-|–|—|to|\.{2,}|…)+\s*\d{1,2}:\d{2}(?::\d{2})?\s*/\s*(?:km|mi))',
+        # e.g. 8:05/mi - 8:40/mi
+        r'(\d{1,2}:\d{2}(?::\d{2})?\s*/\s*(?:km|mi)\s*(?:-|–|—|to|\.{2,}|…)+\s*\d{1,2}:\d{2}(?::\d{2})?\s*/\s*(?:km|mi))',
+        # fallback single pace e.g. 8:05/mi
+        r'(\d{1,2}:\d{2}(?::\d{2})?\s*/\s*(?:km|mi))',
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, text, flags=re.IGNORECASE)
+        if match:
+            return _normalize_whitespace(match.group(1))
+
+    return ""
+
+
+def _extract_vo2_percent(text):
+    match = re.search(r'(\d+\s*[-–]\s*\d+\s*%)|(\d+\s*%)', text)
+    if not match:
+        return ""
+    return re.sub(r'\s+', '', match.group(0))
+
 def auto_login(storage_path, username, password, debug=False):
     """Automatically log in to Runalyze and save storage state."""
     # Force headless mode in CI environments
@@ -212,6 +258,20 @@ def fetch_data(storage_path, user, output_dir="public/data", debug=False):
 
             paces = parse_training_paces_html(panel_html)
 
+            allow_empty = os.getenv('ALLOW_EMPTY_PACES', 'false').lower() in ('1', 'true', 'yes')
+            min_categories = int(os.getenv('MIN_PACE_CATEGORIES', '4'))
+            if len(paces) < min_categories and not allow_empty:
+                debug_file = os.path.join('tmp', f'{user}_panel_debug.html')
+                os.makedirs(os.path.dirname(debug_file), exist_ok=True)
+                with open(debug_file, 'w', encoding='utf-8') as f:
+                    f.write(panel_html)
+                panel_text_preview = _normalize_whitespace(BeautifulSoup(panel_html, 'html.parser').get_text(' ', strip=True))
+                print(f"Panel text preview for {user}: {panel_text_preview[:1200]}")
+                raise Exception(
+                    f"Parsed only {len(paces)} pace entries for {user} (minimum expected: {min_categories}). "
+                    f"Saved panel HTML to {debug_file}. Set ALLOW_EMPTY_PACES=true to bypass this check."
+                )
+
             # Accumulate history
             paces_file = os.path.join(output_dir, f"{user}_paces.json")
             if os.path.exists(paces_file):
@@ -238,33 +298,61 @@ def parse_training_paces_html(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
 
     paces = {}
-    
-    # Parse <p> tags containing pace info
-    # Structure: <p><span class="right">pace_range</span><strong>type</strong><small>vo2%</small></p>
+
+    # Strategy 1: legacy structure from <p> tags.
     pace_paragraphs = soup.find_all('p')
     for p in pace_paragraphs:
         strong = p.find('strong')
         span_right = p.find('span', class_='right')
         small = p.find('small')
-        
+
         if strong and span_right:
-            pace_type = strong.get_text(strip=True)
-            # Clean whitespace from pace range
-            pace_range = ' '.join(span_right.get_text().split())
-            
-            # Extract VO2 percentage from small tag (e.g., "(64 - 75%)")
-            vo2_percent = ""
-            if small:
-                vo2_text = small.get_text(strip=True)
-                # Extract just the percentage part and clean it
-                match = re.search(r'(…?-?\d+%|…\s*-\s*\d+%|\d+\s*-\s*\d+%)', vo2_text)
-                if match:
-                    # Remove all whitespace from the extracted percentage
-                    vo2_percent = re.sub(r'\s+', '', match.group(0))
-            
+            raw_label = _normalize_whitespace(strong.get_text(strip=True))
+            pace_type = _match_category(raw_label) or raw_label
+            pace_range = _normalize_whitespace(span_right.get_text())
+            vo2_percent = _extract_vo2_percent(small.get_text(strip=True) if small else "")
+
             paces[pace_type] = {
                 "pace_range": pace_range,
                 "vo2_percent": vo2_percent
+            }
+
+    # Strategy 2: table-style rows (newer UI variants).
+    for tr in soup.find_all('tr'):
+        cells = tr.find_all(['td', 'th'])
+        if not cells:
+            continue
+
+        row_text = _normalize_whitespace(tr.get_text(' ', strip=True))
+        category = _match_category(row_text)
+        if not category:
+            continue
+
+        pace_range = _extract_pace_range(row_text)
+        if not pace_range and len(cells) >= 2:
+            pace_range = _extract_pace_range(_normalize_whitespace(cells[1].get_text(' ', strip=True)))
+        if not pace_range:
+            continue
+
+        paces[category] = {
+            "pace_range": pace_range,
+            "vo2_percent": _extract_vo2_percent(row_text)
+        }
+
+    # Strategy 3: generic text fallback for card/list layouts.
+    candidate_lines = set()
+    for element in soup.find_all(['p', 'li', 'div', 'span']):
+        text = _normalize_whitespace(element.get_text(' ', strip=True))
+        if text and ('/km' in text.lower() or '/mi' in text.lower()):
+            candidate_lines.add(text)
+
+    for line in candidate_lines:
+        category = _match_category(line)
+        pace_range = _extract_pace_range(line)
+        if category and pace_range:
+            paces[category] = {
+                "pace_range": pace_range,
+                "vo2_percent": _extract_vo2_percent(line)
             }
     
     return paces
