@@ -83,10 +83,6 @@ let dlexer = moo.compile({
   NL: { match: /\n/, lineBreaks: true },
 });
 
-// function getUnitLabel(unit: Units): string {
-//   return unit === "km" ? "km" : "mi";
-// }
-
 function handle_conversions(input: string, from: Units, to: Units): string {
   let result = "";
   dlexer.reset(input);

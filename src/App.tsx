@@ -10,7 +10,6 @@ import { download } from "./ch/downloadservice";
 import PlanAndDate from "./components/PlanAndDate";
 import UndoButton from "./components/UndoButton";
 import PacesPanel from "./components/PacesPanel";
-import history from "./defy/history";
 import { supabaseConfigured } from "./lib/supabaseClient";
 import { fetchCustomizations, saveSwapOperation, DateWorkoutCustomization } from "./lib/customizationService";
 import {
