@@ -18,6 +18,7 @@ import {
   DateParam,
   NumberParam,
 } from "use-query-params";
+import { useLocation } from "react-router-dom";
 import { PlanDetailsCard } from "./components/PlanDetailsCard";
 import { WeekStartsOn, WeekStartsOnValues } from "./ch/datecalc";
 import { useMountEffect } from "./ch/hooks";
@@ -150,13 +151,12 @@ const App = () => {
     }
   });
 
+  const location = useLocation();
   const [, forceUpdate] = React.useReducer((x) => x + 1, 0);
   React.useEffect(() => {
-    // listen for changes to the URL and force the app to re-render
-    history.listen(() => {
-      forceUpdate();
-    });
-  }, []);
+    // react-router v7 exposes the current location, so force a re-render when the URL changes
+    forceUpdate();
+  }, [location.pathname, location.search]);
 
   // When user is switched, reload customizations for the current plan/date
   React.useEffect(() => {

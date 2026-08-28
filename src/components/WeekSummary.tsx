@@ -1,22 +1,16 @@
-import React from "react";
 import { renderDist, getWeekDistance } from "../ch/rendering";
 import StartIcon from "../svg/icons02/start.svg";
 import FinishIcon from "../svg/icons02/finish.svg";
 import HighMileageIcon from "../svg/highMileage.svg";
-import { RacePlan } from "../ch/dategrid";
 import { Week, DayDetails, Units } from "types/app";
 
 interface Props {
   desc: string;
   week: Week<DayDetails>;
   units: Units;
-  racePlan: RacePlan;
   isFirstWeek: boolean;
   isLastWeek: boolean;
   isHighestMileage: boolean;
-  selectedUser: "aaron" | "kristin";
-  planId: string;
-  // removed isCurrentWeek
 }
 
 export const WeekSummary = ({
@@ -25,8 +19,6 @@ export const WeekSummary = ({
   isFirstWeek,
   isLastWeek,
   isHighestMileage,
-  selectedUser,
-  planId,
 }: Props) => {
   const distance = getWeekDistance(week, units);
   

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { render } from "../ch/rendering";
+import { render, renderDist } from "../ch/rendering";
 import { Dateline } from "./Dateline";
 import { useDrag, DragSourceMonitor } from "react-dnd";
 import { ItemTypes } from "../ch/ItemTypes";
@@ -27,6 +27,21 @@ function renderDesc(
   to: Units,
 ): React.ReactElement {
   let [title, desc] = render(dayDetails, from, to);
+
+  if (
+    dayDetails.dist !== undefined &&
+    !/\{\d+(?:\.\d+)?(?:-\d+(?:\.\d+)?)?\}/.test(title) &&
+    !/\d+(?:\.\d+)?(?:\s*-\s*\d+(?:\.\d+)?)?\s*(mi|km)/i.test(title)
+  ) {
+    const distance = Array.isArray(dayDetails.dist)
+      ? dayDetails.dist
+      : [dayDetails.dist];
+    const suffix = render(dayDetails, from, to)[0].endsWith("mi") || render(dayDetails, from, to)[0].endsWith("km")
+      ? ""
+      : ` ${renderDist(distance, from, to)}`;
+    title = `${title}${suffix}`.trim();
+  }
+
   // Only render the description if it differs from the title
   // In the ical file we always render both and we automatically render the description using the same text as title if description is empty
   desc = title.replace(/\s/g, "") === desc.replace(/\s/g, "") ? "" : desc;

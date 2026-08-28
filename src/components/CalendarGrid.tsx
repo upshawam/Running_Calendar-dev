@@ -174,12 +174,9 @@ export const CalendarGrid = ({
           desc={w.desc}
           week={w}
           units={units}
-          racePlan={racePlan}
           isFirstWeek={w.weekNum === 0}
           isLastWeek={w.weekNum === racePlan.dateGrid.weekCount - 1}
           isHighestMileage={isHighestMileage}
-          selectedUser={selectedUser}
-          planId={racePlan.id}
         />
         {w.days.map((d, _) => {
           const isToday = isSameDay(d.date, today);
