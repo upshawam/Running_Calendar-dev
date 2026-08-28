@@ -1,5 +1,5 @@
 id: nyc_marathon_2026_10_week_custom
-name: NYC Marathon 2026 10-Week Experienced Runner Build
+name: Aaron_NYC
 description: 10-week marathon build for NYC Marathon 2026, starting from an already completed 24-mile week and peaking at 56-58 miles before a conservative sub-4:00 race plan. Built for an experienced runner with prior 50K and 50-mile history.
 units: mi
 source: /Running_Calendar/plans/yaml/nyc_marathon_2026_10_week_custom.yaml

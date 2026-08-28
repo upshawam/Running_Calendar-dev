@@ -1,0 +1,360 @@
+{
+  "id": "nyc_marathon_2026_10_week_kristin",
+  "name": "Kristin_NYC",
+  "description": "10-week marathon build for NYC Marathon 2026 built around Kristin's current fitness, absorbing the 15-mile stepback week, and progressing to a durable 40-45 mpw pattern with marathon-specific work without excessive fatigue.",
+  "units": "mi",
+  "source": "/Running_Calendar/plans/yaml/nyc_marathon_2026_10_week_kristin.yaml",
+  "type": "Marathon",
+  "schedule": [
+    {
+      "description": "Week 1 current build. 11 easy and 9 progression are already in the bank; the 15-mile easy long run is still planned this week. Optional 4 easy recovery if she feels good, bringing total to 39.",
+      "workouts": [
+        {
+          "title": "Off Day"
+        },
+        {
+          "title": "Easy aerobic",
+          "description": "Already completed 11 easy miles.",
+          "distance": 11
+        },
+        {
+          "title": "Off Day"
+        },
+        {
+          "title": "Easy aerobic",
+          "description": "Already completed 9 miles with the tempo/progression session.",
+          "distance": 9
+        },
+        {
+          "title": "Off Day"
+        },
+        {
+          "title": "Easy long run",
+          "description": "Planned easy long run as part of the absorption week.",
+          "distance": 15
+        },
+        {
+          "title": "Easy recovery",
+          "description": "Optional only if feeling very good; otherwise skip.",
+          "distance": 4
+        }
+      ]
+    },
+    {
+      "description": "Dates: 2026-08-31 to 2026-09-06. Target mileage: 40.",
+      "workouts": [
+        {
+          "title": "Off Day"
+        },
+        {
+          "title": "Easy aerobic + strides",
+          "description": "Easy run with 6 relaxed strides.",
+          "distance": 8
+        },
+        {
+          "title": "Off Day"
+        },
+        {
+          "title": "Threshold",
+          "description": "2 mi easy, 3 x 1 mi at 8:30-8:45/mi with recovery, cooldown.",
+          "distance": 8
+        },
+        {
+          "title": "Off Day"
+        },
+        {
+          "title": "Easy aerobic",
+          "description": "Easy aerobic running.",
+          "distance": 5
+        },
+        {
+          "title": "Long run",
+          "description": "Easy pace, no marathon pace. This is the re-entry long run after the 15-mile stepback.",
+          "distance": 19
+        }
+      ]
+    },
+    {
+      "description": "Dates: 2026-09-07 to 2026-09-13. Target mileage: 43. First marathon-specific checkpoint.",
+      "workouts": [
+        {
+          "title": "Recovery",
+          "description": "Easy recovery.",
+          "distance": 5
+        },
+        {
+          "title": "Marathon pace",
+          "description": "2 mi easy, 5 mi at 9:05-9:15/mi, 2 mi easy.",
+          "distance": 9
+        },
+        {
+          "title": "Off Day"
+        },
+        {
+          "title": "Easy aerobic",
+          "description": "Easy aerobic running.",
+          "distance": 8
+        },
+        {
+          "title": "Off Day"
+        },
+        {
+          "title": "Easy aerobic + strides",
+          "description": "Easy + relaxed strides.",
+          "distance": 5
+        },
+        {
+          "title": "Long run",
+          "description": "Easy run at a comfortable effort.",
+          "distance": 16
+        }
+      ]
+    },
+    {
+      "description": "Dates: 2026-09-14 to 2026-09-20. Target mileage: 47. Substantial but controlled week.",
+      "workouts": [
+        {
+          "title": "Recovery",
+          "description": "Easy recovery.",
+          "distance": 5
+        },
+        {
+          "title": "Threshold",
+          "description": "2 mi easy, 4 x 1.5 mi at 8:35-8:50/mi with recovery, cooldown.",
+          "distance": 9
+        },
+        {
+          "title": "Off Day"
+        },
+        {
+          "title": "Easy aerobic",
+          "description": "Easy aerobic running.",
+          "distance": 9
+        },
+        {
+          "title": "Off Day"
+        },
+        {
+          "title": "Marathon pace",
+          "description": "6 mi total with 3 mi at marathon pace and 3 mi easy.",
+          "distance": 6
+        },
+        {
+          "title": "Long run",
+          "description": "Easy long run with no pressure.",
+          "distance": 18
+        }
+      ]
+    },
+    {
+      "description": "Dates: 2026-09-21 to 2026-09-27. Target mileage: 50.",
+      "workouts": [
+        {
+          "title": "Recovery",
+          "description": "Easy recovery.",
+          "distance": 5
+        },
+        {
+          "title": "Marathon pace",
+          "description": "2 mi easy, 5 mi at marathon pace, 2 mi easy.",
+          "distance": 9
+        },
+        {
+          "title": "Off Day"
+        },
+        {
+          "title": "Easy aerobic",
+          "description": "Easy aerobic running.",
+          "distance": 9
+        },
+        {
+          "title": "Off Day"
+        },
+        {
+          "title": "Easy/steady",
+          "description": "Comfortable steady effort.",
+          "distance": 7
+        },
+        {
+          "title": "Long run",
+          "description": "Mostly easy; final 4-5 miles may gradually come down toward 9:20-9:40 if feeling great.",
+          "distance": 20
+        }
+      ]
+    },
+    {
+      "description": "Dates: 2026-09-28 to 2026-10-04. Target mileage: 52. This is a key marathon-specific week.",
+      "workouts": [
+        {
+          "title": "Recovery",
+          "description": "Easy recovery.",
+          "distance": 5
+        },
+        {
+          "title": "Marathon-specific threshold",
+          "description": "2 mi easy, 3 x 2 mi at 8:40-8:55/mi with recovery, cooldown.",
+          "distance": 10
+        },
+        {
+          "title": "Off Day"
+        },
+        {
+          "title": "Easy aerobic",
+          "description": "Easy aerobic running.",
+          "distance": 9
+        },
+        {
+          "title": "Off Day"
+        },
+        {
+          "title": "Marathon pace workout",
+          "description": "2 mi easy, 6 mi at marathon pace, 2 mi easy.",
+          "distance": 10
+        },
+        {
+          "title": "Long run",
+          "description": "Easy and controlled.",
+          "distance": 18
+        }
+      ]
+    },
+    {
+      "description": "Dates: 2026-10-05 to 2026-10-11. Target mileage: 48-50. Final major marathon-specific weekend.",
+      "workouts": [
+        {
+          "title": "Recovery",
+          "description": "Easy recovery.",
+          "distance": 5
+        },
+        {
+          "title": "Threshold intervals",
+          "description": "2 mi easy, 5 x 1 mi at 8:30-8:45/mi with recovery, cooldown.",
+          "distance": 9
+        },
+        {
+          "title": "Off Day"
+        },
+        {
+          "title": "Easy aerobic",
+          "description": "Easy running.",
+          "distance": 8
+        },
+        {
+          "title": "Off Day"
+        },
+        {
+          "title": "Easy aerobic + strides",
+          "description": "Easy + relaxed strides.",
+          "distance": 6
+        },
+        {
+          "title": "Long run progression",
+          "description": "Miles 1-8 at 10:15-10:30; miles 9-14 at 9:45-10:00; miles 15-20 at 9:10-9:20 if controlled.",
+          "distance": 20
+        }
+      ]
+    },
+    {
+      "description": "Dates: 2026-10-12 to 2026-10-18. Target mileage: 40. Starting the taper.",
+      "workouts": [
+        {
+          "title": "Off Day"
+        },
+        {
+          "title": "Marathon pace",
+          "description": "2 mi easy, 5 mi at marathon pace, 2 mi easy.",
+          "distance": 9
+        },
+        {
+          "title": "Off Day"
+        },
+        {
+          "title": "Easy aerobic",
+          "description": "Easy running.",
+          "distance": 8
+        },
+        {
+          "title": "Off Day"
+        },
+        {
+          "title": "Easy aerobic + strides",
+          "description": "Easy + relaxed strides.",
+          "distance": 6
+        },
+        {
+          "title": "Long run",
+          "description": "Easy and relaxed.",
+          "distance": 17
+        }
+      ]
+    },
+    {
+      "description": "Dates: 2026-10-19 to 2026-10-25. Target mileage: 30.",
+      "workouts": [
+        {
+          "title": "Off Day"
+        },
+        {
+          "title": "Marathon pace intervals",
+          "description": "2 mi easy, 4 x 1 mi at marathon pace with recovery, cooldown.",
+          "distance": 8
+        },
+        {
+          "title": "Off Day"
+        },
+        {
+          "title": "Easy aerobic",
+          "description": "Easy aerobic running.",
+          "distance": 7
+        },
+        {
+          "title": "Off Day"
+        },
+        {
+          "title": "Easy aerobic + strides",
+          "description": "Easy + 4 x 20 sec relaxed strides.",
+          "distance": 4
+        },
+        {
+          "title": "Easy long run",
+          "description": "Comfortable easy mileage.",
+          "distance": 11
+        }
+      ]
+    },
+    {
+      "description": "Race week. Keep it light and calm.",
+      "workouts": [
+        {
+          "title": "Off Day"
+        },
+        {
+          "title": "Easy aerobic + strides",
+          "description": "Easy + 4 x 20 sec relaxed strides.",
+          "distance": 5
+        },
+        {
+          "title": "Off Day"
+        },
+        {
+          "title": "Marathon pace tune-up",
+          "description": "2 mi easy + 2 mi at marathon pace.",
+          "distance": 4
+        },
+        {
+          "title": "Off Day"
+        },
+        {
+          "title": "Race shakeout",
+          "description": "Very easy + 3 x 15 sec relaxed strides.",
+          "distance": 3
+        },
+        {
+          "title": "NYC Marathon",
+          "description": "Goal is a controlled, durable marathon.",
+          "distance": 26.2
+        }
+      ]
+    }
+  ]
+}
