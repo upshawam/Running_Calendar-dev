@@ -1,3 +1,9 @@
+jest.mock("./config", () => ({
+  Config: {
+    plansPath: "plans/json/",
+  },
+}));
+
 import { repo } from "./planrepo";
 
 describe("PlanRepo", function () {

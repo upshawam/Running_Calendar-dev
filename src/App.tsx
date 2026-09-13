@@ -26,6 +26,111 @@ import { Units, PlanSummary, dayOfWeek } from "types/app";
 import { getLocaleUnits } from "./ch/localize";
 
 const STORAGE_KEY = "rc_plan_selection";
+const SELECTED_PLAN_BY_USER_STORAGE_KEY = "selectedPlanByUser";
+const SELECTED_END_DATE_BY_USER_STORAGE_KEY = "selectedEndDateByUser";
+
+type AppUser = "aaron" | "kristin";
+type PlanIdByUser = Record<AppUser, string>;
+type EndDateByUser = Record<AppUser, Date>;
+type EndDateIsoByUser = Record<AppUser, string>;
+
+const defaultPlanByUser = (defaultPlan: PlanSummary): Record<AppUser, PlanSummary> => ({
+  aaron: defaultPlan,
+  kristin: defaultPlan,
+});
+
+const loadSelectedPlanByUser = (
+  defaultPlan: PlanSummary,
+): Record<AppUser, PlanSummary> => {
+  const fallback = defaultPlanByUser(defaultPlan);
+  try {
+    const raw = localStorage.getItem(SELECTED_PLAN_BY_USER_STORAGE_KEY);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw) as Partial<PlanIdByUser>;
+    if (
+      !parsed ||
+      typeof parsed !== "object" ||
+      typeof parsed.aaron !== "string" ||
+      typeof parsed.kristin !== "string"
+    ) {
+      return fallback;
+    }
+    const aaronPlan = repo.find(parsed.aaron);
+    const kristinPlan = repo.find(parsed.kristin);
+    if (aaronPlan.id !== parsed.aaron || kristinPlan.id !== parsed.kristin) {
+      return fallback;
+    }
+    return {
+      aaron: aaronPlan,
+      kristin: kristinPlan,
+    };
+  } catch (_) {
+    return fallback;
+  }
+};
+
+const persistSelectedPlanByUser = (selectedPlanByUser: Record<AppUser, PlanSummary>) => {
+  try {
+    const planIds: PlanIdByUser = {
+      aaron: selectedPlanByUser.aaron.id,
+      kristin: selectedPlanByUser.kristin.id,
+    };
+    localStorage.setItem(
+      SELECTED_PLAN_BY_USER_STORAGE_KEY,
+      JSON.stringify(planIds),
+    );
+  } catch (_) {
+    /* ignore storage issues */
+  }
+};
+
+const defaultEndDateByUser = (defaultEndDate: Date): EndDateByUser => ({
+  aaron: defaultEndDate,
+  kristin: defaultEndDate,
+});
+
+const loadSelectedEndDateByUser = (defaultEndDate: Date): EndDateByUser => {
+  const fallback = defaultEndDateByUser(defaultEndDate);
+  try {
+    const raw = localStorage.getItem(SELECTED_END_DATE_BY_USER_STORAGE_KEY);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw) as Partial<EndDateIsoByUser>;
+    if (
+      !parsed ||
+      typeof parsed !== "object" ||
+      typeof parsed.aaron !== "string" ||
+      typeof parsed.kristin !== "string"
+    ) {
+      return fallback;
+    }
+    const aaronDate = new Date(parsed.aaron);
+    const kristinDate = new Date(parsed.kristin);
+    if (isNaN(aaronDate.getTime()) || isNaN(kristinDate.getTime())) {
+      return fallback;
+    }
+    return {
+      aaron: aaronDate,
+      kristin: kristinDate,
+    };
+  } catch (_) {
+    return fallback;
+  }
+};
+
+const persistSelectedEndDateByUser = (selectedEndDateByUser: EndDateByUser) => {
+  try {
+    const isoDates: EndDateIsoByUser = {
+      aaron: selectedEndDateByUser.aaron.toISOString(),
+      kristin: selectedEndDateByUser.kristin.toISOString(),
+    };
+    localStorage.setItem(
+      SELECTED_END_DATE_BY_USER_STORAGE_KEY,
+      JSON.stringify(isoDates),
+    );
+  } catch (_) {
+    /* ignore storage issues */
+  }
+};
 
 const persistSelection = (plan: PlanSummary, date: Date, units: Units) => {
   try {
@@ -67,17 +172,37 @@ const App = () => {
   const [selectedUnits, setSelectedUnits] = useState<Units>(
     u === "mi" || u === "km" ? u : getLocaleUnits(),
   );
-  var [selectedPlan, setSelectedPlan] = useState(repo.find(p || ""));
+  const defaultUser: AppUser = "aaron";
+  const defaultPlan = repo.find("");
+  const defaultEndDate =
+    d && isAfter(d, new Date())
+      ? d
+      : addWeeks(endOfWeek(new Date(), { weekStartsOn: WeekStartsOnValues.Monday }), 20);
+  const [selectedPlanByUser, setSelectedPlanByUser] = useState<Record<AppUser, PlanSummary>>(() => {
+    const saved = loadSelectedPlanByUser(defaultPlan);
+    if (p) {
+      return { ...saved, aaron: repo.find(p) };
+    }
+    return saved;
+  });
+  const [selectedEndDateByUser, setSelectedEndDateByUser] = useState<EndDateByUser>(() => {
+    const saved = loadSelectedEndDateByUser(defaultEndDate);
+    if (d && isAfter(d, new Date())) {
+      return { ...saved, aaron: d };
+    }
+    return saved;
+  });
+  var [selectedPlan, setSelectedPlan] = useState(
+    selectedPlanByUser[defaultUser] || defaultPlan,
+  );
   var [racePlan, setRacePlan] = useState<RacePlan | undefined>(undefined);
   var [undoHistory, setUndoHistory] = useState([] as RacePlan[]);
   // Always use Monday as week start
   const weekStartsOn = WeekStartsOnValues.Monday;
   var [planEndDate, setPlanEndDate] = useState(
-    d && isAfter(d, new Date())
-      ? d
-      : addWeeks(endOfWeek(new Date(), { weekStartsOn: weekStartsOn }), 20),
+    selectedEndDateByUser[defaultUser] || defaultEndDate,
   );
-  var [selectedUser, setSelectedUser] = useState<"aaron" | "kristin">("aaron");
+  var [selectedUser, setSelectedUser] = useState<AppUser>(defaultUser);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Apply customizations by directly setting events at customized dates
@@ -134,12 +259,10 @@ const App = () => {
     (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
 
   useMountEffect(() => {
-    // Prefer URL params; otherwise fall back to last saved selection; otherwise defaults
+    // Prefer URL params for date/units; selected plan comes from per-user map
     const saved = loadSelection();
-    const planFromUrl = p ? repo.find(p) : undefined;
-    const planToLoad = planFromUrl || saved?.plan || selectedPlan;
-    const dateFromUrl = d && isAfter(d, new Date()) ? d : undefined;
-    const dateToLoad = dateFromUrl || saved?.date || planEndDate;
+    const planToLoad = selectedPlanByUser[selectedUser] || selectedPlan;
+    const dateToLoad = selectedEndDateByUser[selectedUser] || saved?.date || planEndDate;
     const unitsFromUrl = u === "mi" || u === "km" ? u : undefined;
     const unitsToLoad = unitsFromUrl || saved?.units || selectedUnits;
 
@@ -157,31 +280,6 @@ const App = () => {
     // react-router v7 exposes the current location, so force a re-render when the URL changes
     forceUpdate();
   }, [location.pathname, location.search]);
-
-  // When user is switched, reload customizations for the current plan/date
-  React.useEffect(() => {
-    const reloadWithUserCustomizations = async () => {
-      if (racePlan && selectedPlan) {
-        // Fetch customizations for the newly selected user
-        const customizations = await fetchCustomizations(
-          selectedUser,
-          selectedPlan.id,
-          planEndDate.toISOString().split('T')[0]
-        );
-        
-        // Rebuild the plan from scratch and apply customizations
-        let updatedRacePlan = build(await repo.fetch(selectedPlan), planEndDate, weekStartsOn);
-        
-        // Apply the customizations directly
-        updatedRacePlan = applyCustomizations(updatedRacePlan, customizations);
-        
-        setRacePlan(updatedRacePlan);
-        setUndoHistory([updatedRacePlan]);
-      }
-    };
-    
-    reloadWithUserCustomizations();
-  }, [selectedUser]);
 
   const getParams = (
     units: Units,
@@ -234,10 +332,37 @@ const App = () => {
     racePlan = applyCustomizations(racePlan, customizations);
     
     setSelectedPlan(plan);
+    const updatedSelectedPlanByUser = {
+      ...selectedPlanByUser,
+      [selectedUser]: plan,
+    };
+    setSelectedPlanByUser(updatedSelectedPlanByUser);
+    persistSelectedPlanByUser(updatedSelectedPlanByUser);
     setRacePlan(racePlan);
     setUndoHistory([racePlan]);
     setq(getParams(selectedUnits, plan, planEndDate, weekStartsOn));
     persistSelection(plan, planEndDate, selectedUnits);
+  };
+
+  const onSelectedUserChange = async (user: AppUser) => {
+    const usersPlan = selectedPlanByUser[user] || selectedPlan;
+    const usersEndDate = selectedEndDateByUser[user] || planEndDate;
+    let nextRacePlan = build(await repo.fetch(usersPlan), usersEndDate, weekStartsOn);
+
+    const customizations = await fetchCustomizations(
+      user,
+      usersPlan.id,
+      usersEndDate.toISOString().split('T')[0]
+    );
+
+    nextRacePlan = applyCustomizations(nextRacePlan, customizations);
+
+    setSelectedUser(user);
+    setSelectedPlan(usersPlan);
+    setPlanEndDate(usersEndDate);
+    setRacePlan(nextRacePlan);
+    setUndoHistory([nextRacePlan]);
+    setq(getParams(selectedUnits, usersPlan, usersEndDate, weekStartsOn));
   };
 
   const onSelectedEndDateChange = async (date: Date) => {
@@ -254,6 +379,12 @@ const App = () => {
     racePlan = applyCustomizations(racePlan, customizations);
     
     setPlanEndDate(date);
+    const updatedSelectedEndDateByUser = {
+      ...selectedEndDateByUser,
+      [selectedUser]: date,
+    };
+    setSelectedEndDateByUser(updatedSelectedEndDateByUser);
+    persistSelectedEndDateByUser(updatedSelectedEndDateByUser);
     setRacePlan(racePlan);
     setUndoHistory([racePlan]);
     setq(getParams(selectedUnits, selectedPlan, date, weekStartsOn));
@@ -334,7 +465,7 @@ const App = () => {
           Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your env (e.g., .env.local) and restart the dev server.
         </div>
       )}
-      <PacesPanel selectedUser={selectedUser} onUserChange={setSelectedUser} />
+      <PacesPanel selectedUser={selectedUser} onUserChange={onSelectedUserChange} />
       <PlanAndDate
         availablePlans={repo.available}
         selectedPlan={selectedPlan}
